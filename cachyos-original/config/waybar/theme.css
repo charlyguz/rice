@@ -1,0 +1,44 @@
+/* ============================================================
+ *  PUENTE DE COLORES:  nombres de HyDE  ->  paleta de Noctalia
+ *
+ *  HyDE original saca sus colores de "wallbash" (su propio motor
+ *  de temas, en ~/.cache/hyde/wallbash/gtk.css). Tú no tienes HyDE
+ *  instalado, pero Noctalia hace exactamente lo mismo: deriva una
+ *  paleta de tu wallpaper y la escribe en gtk-3.0/noctalia.css.
+ *
+ *  Así que aquí traduzco de un vocabulario al otro. Resultado:
+ *  el CSS de HyDE funciona tal cual, y los colores siguen tu fondo.
+ * ============================================================ */
+
+/* 1) Trae la paleta de Noctalia (se regenera al cambiar wallpaper) */
+@import url("../gtk-3.0/noctalia.css");
+
+/* 2) Traduce los nombres que usa el CSS de HyDE.
+ *    Columna izquierda = nombre HyDE (no lo cambies, su CSS lo busca)
+ *    Columna derecha   = de dónde sale el color (esto sí lo cambias) */
+
+/* Fondo de la barra: transparente, para que floten las islas */
+@define-color bar-bg      rgba(0, 0, 0, 0);
+
+/* Fondo y texto de cada isla */
+@define-color main-bg     @card_bg_color;
+@define-color main-fg     @window_fg_color;
+
+/* Workspace / tarea ACTIVA */
+@define-color wb-act-bg   @accent_bg_color;
+@define-color wb-act-fg   @accent_fg_color;
+
+/* Al pasar el mouse */
+@define-color wb-hvr-bg   @accent_bg_color;
+@define-color wb-hvr-fg   @accent_fg_color;
+
+/* Variantes que usa el taskbar de HyDE */
+@define-color wb-color       @window_fg_color;
+@define-color wb-act-color   @accent_fg_color;
+@define-color wb-hvr-color   @accent_fg_color;
+
+/* ---- ¿Quieres colores fijos en vez de los del wallpaper? ----
+ * Borra el @import de arriba y pon tus hex directo:
+ *     @define-color main-bg    #1e2025;
+ *     @define-color wb-act-bg  #abc7ff;
+ */

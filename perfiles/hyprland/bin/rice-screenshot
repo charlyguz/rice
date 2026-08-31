@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Capturas.  region (Print) · full (SUPER+Print) · window
+# Cadena: grim/slurp -> editor (satty o swappy) -> portapapeles + archivo.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
+mkdir -p "$DIR"
+OUT="$DIR/$(date +%Y-%m-%d_%H-%M-%S).png"
+
+have() { command -v "$1" >/dev/null 2>&1; }
+have grim || { notify-send -a rice "Captura" "Falta 'grim'"; exit 1; }
+
+case "${1:-region}" in
+  region)
+      have slurp || { notify-send -a rice "Captura" "Falta 'slurp'"; exit 1; }
+      geo=$(slurp -d) || exit 0
+      grim -g "$geo" - > /tmp/rice-shot.png ;;
+  window)
+      have hyprctl && have jq || { notify-send -a rice "Captura" "Falta hyprctl/jq"; exit 1; }
+      geo=$(hyprctl -j activewindow | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
+      grim -g "$geo" - > /tmp/rice-shot.png ;;
+  full|*)
+      grim - > /tmp/rice-shot.png ;;
+esac
+
+# siempre al portapapeles
+have wl-copy && wl-copy < /tmp/rice-shot.png
+
+if   have satty;  then satty -f /tmp/rice-shot.png --output-filename "$OUT" --early-exit --copy-command wl-copy &
+elif have swappy; then swappy -f /tmp/rice-shot.png -o "$OUT" &
+else
+  cp /tmp/rice-shot.png "$OUT"
+  notify-send -a rice "Captura guardada" "$OUT" -i "$OUT"
+fi

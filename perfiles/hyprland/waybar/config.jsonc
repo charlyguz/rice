@@ -1,0 +1,200 @@
+// ============================================================
+//  Disposición OFICIAL de HyDE (su layout hyprdots/04)
+//
+//  Lo distintivo de HyDE, y lo que lo hace verse distinto:
+//    · CPU/RAM y el RELOJ van a la IZQUIERDA
+//    · Los WORKSPACES van al CENTRO
+//    · Todo lo demás a la derecha, en tres islas
+//
+//  Cada isla es un "group/pill#nombre". Para mover un módulo,
+//  córtalo de una lista "modules" y pégalo en otra.
+//
+//  Cada botón llama a un script propio en ~/.local/bin (rice-*).
+//  Son shell plano, sin dependencias raras: ábrelos y edítalos.
+//  Lista completa:  rice-help
+// ============================================================
+{
+  // "bottom" + exclusive:true = la barra reserva su espacio con
+  // ventanas normales, pero las de PANTALLA COMPLETA (juegos, video)
+  // pasan por encima y la tapan. Con "top" se quedaba encima del juego.
+  "layer": "bottom",
+  "position": "top",
+  "output": ["*"],
+  "height": 42,
+  "exclusive": true,
+  "passthrough": false,
+  "reload_style_on_change": true,
+
+  "include": [
+    "__CFG__/waybar/modules/cpu.jsonc",
+    "__CFG__/waybar/modules/memory.jsonc",
+    "__CFG__/waybar/modules/temperature.jsonc",
+    "__CFG__/waybar/modules/clock.jsonc",
+    "__CFG__/waybar/modules/network.jsonc",
+    "__CFG__/waybar/modules/pulseaudio.jsonc",
+    "__CFG__/waybar/modules/pulseaudio_microphone.jsonc",
+    "__CFG__/waybar/modules/battery.jsonc",
+    "__CFG__/waybar/modules/tray.jsonc",
+    "__CFG__/waybar/modules/idle_inhibitor.jsonc",
+    "__CFG__/waybar/modules/hyprland-workspaces.jsonc"
+  ],
+
+  // ============ IZQUIERDA: sistema + reloj ============
+  "modules-left": [
+    "group/pill#left1",
+    "group/pill#left2"
+  ],
+
+  "group/pill#left1": {
+    "orientation": "inherit",
+    "modules": ["custom/logo", "cpu", "memory", "temperature"]
+  },
+
+  "group/pill#left2": {
+    "orientation": "inherit",
+    "modules": ["idle_inhibitor", "clock"]
+  },
+
+  // ============ CENTRO: workspaces + qué suena ============
+  "modules-center": [
+    "group/pill#center"
+  ],
+
+  "group/pill#center": {
+    "orientation": "inherit",
+    "modules": ["hyprland/workspaces", "mpris"]
+  },
+
+  // ============ DERECHA: hardware, bandeja, herramientas ============
+  // El brillo y la batería solo aparecen si esta máquina los tiene.
+  // install.sh lo decide mirando /sys, no hay que tocar nada.
+  "modules-right": [
+    "group/pill#right1",
+    "group/pill#right2",
+    "group/pill#right3"
+  ],
+
+  "group/pill#right1": {
+    "orientation": "inherit",
+    "modules": [
+      __BACKLIGHT__
+      "pulseaudio",
+      "pulseaudio#microphone",
+      "network",
+      "custom/updates"
+    ]
+  },
+
+  "group/pill#right2": {
+    "orientation": "inherit",
+    "modules": ["tray"__BATTERY__]
+  },
+
+  "group/pill#right3": {
+    "orientation": "inherit",
+    "modules": [
+      "custom/wallpaper",
+      "custom/theme",
+      "custom/clipboard",
+      "custom/screenshot",
+      "custom/settings",
+      "custom/power"
+    ]
+  },
+
+  // ==================== DEFINICIONES PROPIAS ====================
+  // HyDE resuelve estas con su binario 'hyde-shell'.
+  // Aquí van contra los scripts rice-* de este repo.
+
+  "custom/logo": {
+    "format": "__LOGO__",
+    "tooltip": true,
+    "tooltip-format": "Lanzador de aplicaciones",
+    "on-click": "__BIN__/rice-launcher",
+    "on-click-right": "__BIN__/rice-panel"
+  },
+
+  // El módulo de medios: muestra qué suena y despliega el panel
+  "mpris": {
+    "format": "󰎇  {title}",
+    "format-paused": "󰏤  {title}",
+    "format-stopped": "󰎇  —",
+    // Súbelo y otros módulos empezarán a mostrar "…" por falta de espacio
+    "max-length": 16,
+    "tooltip-format": "{player}: {title}\n{artist}",
+    "on-click": "__BIN__/rice-media toggle",
+    "on-click-middle": "__BIN__/rice-media toggle",
+    "on-scroll-up": "__BIN__/rice-media next",
+    "on-scroll-down": "__BIN__/rice-media prev"
+  },
+
+  "backlight": {
+    // Sin "device": Waybar detecta solo el backlight. Si tienes varios y
+    // agarra el equivocado, mira /sys/class/backlight y ponlo aquí.
+    "format": "󰃟 {percent}%",
+    "tooltip-format": "Brillo: {percent}%\nClic para el panel de pantalla",
+    "on-click": "__BIN__/rice-panel",
+    "on-scroll-up": "__BIN__/rice-brightness up",
+    "on-scroll-down": "__BIN__/rice-brightness down"
+  },
+
+  "custom/updates": {
+    "format": "󰇚 {}",
+    "exec": "__BIN__/rice-updates count",
+    "interval": 1800,
+    "tooltip": true,
+    "tooltip-format": "Actualizaciones pendientes",
+    "on-click": "__BIN__/rice-updates show"
+  },
+
+  // ---------- HERRAMIENTAS ----------
+
+  "custom/wallpaper": {
+    "format": "󰸉",
+    "tooltip": true,
+    "tooltip-format": "Selector de fondos\nClic derecho: siguiente · Rueda: cambiar",
+    "on-click": "__BIN__/rice-wallpaper menu",
+    "on-click-right": "__BIN__/rice-wallpaper next",
+    "on-scroll-up": "__BIN__/rice-wallpaper next",
+    "on-scroll-down": "__BIN__/rice-wallpaper prev"
+  },
+
+  "custom/theme": {
+    "format": "󰏘",
+    "tooltip": true,
+    "tooltip-format": "Tema claro/oscuro\nClic derecho: elegir paleta",
+    "on-click": "__BIN__/rice-theme toggle",
+    "on-click-right": "__BIN__/rice-theme menu"
+  },
+
+  "custom/clipboard": {
+    "format": "󰅌",
+    "tooltip": true,
+    "tooltip-format": "Portapapeles (igual que Super+V)",
+    "on-click": "__BIN__/rice-clipboard"
+  },
+
+  "custom/screenshot": {
+    "format": "󰹑",
+    "tooltip": true,
+    "tooltip-format": "Captura de región (igual que Print)\nClic derecho: pantalla completa",
+    "on-click": "__BIN__/rice-screenshot region",
+    "on-click-right": "__BIN__/rice-screenshot full"
+  },
+
+  "custom/settings": {
+    "format": "󰒓",
+    "tooltip": true,
+    "tooltip-format": "Centro de control\nClic derecho: ajustes de Noctalia",
+    "on-click": "__BIN__/rice-panel",
+    "on-click-right": "__BIN__/rice-theme menu"
+  },
+
+  "custom/power": {
+    "format": "󰐥",
+    "tooltip": true,
+    "tooltip-format": "Menú de sesión\nClic derecho: bloquear",
+    "on-click": "__BIN__/rice-session",
+    "on-click-right": "__BIN__/rice-session lock"
+  }
+}

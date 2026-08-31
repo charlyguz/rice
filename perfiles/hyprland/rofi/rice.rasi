@@ -1,0 +1,55 @@
+/* Mismo lenguaje visual que la barra: isla redondeada, borde de acento,
+ * fondo translúcido. Los colores vienen de colors.rasi (rice-theme). */
+@import "colors.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+window {
+    transparency: "real";
+    background-color: @bg;
+    border: 2px;
+    border-color: @border-c;
+    border-radius: 20px;
+    width: 42%;
+    padding: 18px;
+}
+
+mainbox { children: [ inputbar, listview ]; spacing: 14px; }
+
+inputbar {
+    background-color: @bg-alt;
+    border-radius: 16px;
+    padding: 12px 16px;
+    spacing: 10px;
+    children: [ prompt, entry ];
+}
+
+prompt { text-color: @accent; }
+entry  { placeholder: "Buscar…"; placeholder-color: @fg-dim; cursor: text; }
+
+listview {
+    lines: 8;
+    columns: 1;
+    scrollbar: false;
+    spacing: 4px;
+    fixed-height: false;
+}
+
+element {
+    padding: 10px 14px;
+    border-radius: 12px;
+    spacing: 12px;
+}
+element normal normal   { text-color: @fg; }
+element alternate normal{ text-color: @fg; }
+element selected normal { background-color: @accent; text-color: @accent-fg; }
+element selected active { background-color: @accent; text-color: @accent-fg; }
+element normal urgent   { text-color: @urgent; }
+
+element-icon { size: 1.6em; vertical-align: 0.5; }
+element-text { vertical-align: 0.5; }
+
+message { background-color: @bg-alt; border-radius: 12px; padding: 10px; }

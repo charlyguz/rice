@@ -1,0 +1,49 @@
+/*
+ * DRAWER de volumen (técnica de HyDE).
+ *
+ * Normalmente solo se ve el altavoz. Al pasar el mouse por encima,
+ * la isla se EXPANDE hacia la izquierda y aparece el micrófono.
+ * Sale desde el propio módulo, no en el centro de la pantalla.
+ *
+ *   "click-to-reveal": false  -> se abre al pasar el mouse
+ *                       true   -> se abre solo al hacer clic
+ *   "transition-duration"      -> ms de la animación
+ */
+{
+  "group/volumecontrol": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 350,
+      "children-class": "volumecontrol-drawer",
+      "transition-left-to-right": false,
+      "click-to-reveal": false
+    },
+    "modules": ["pulseaudio#output", "pulseaudio#input"]
+  },
+
+  "pulseaudio#output": {
+    "format": "{icon}  {volume}",
+    "format-muted": "󰝟  {volume}",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "tooltip-format": "{desc} · {volume}%\nRueda: subir/bajar · Medio: mutear",
+    "scroll-step": 5,
+    "on-click-middle": "__BIN__/rice-volume mute",
+    "on-scroll-up": "__BIN__/rice-volume up",
+    "on-scroll-down": "__BIN__/rice-volume down"
+  },
+
+  "pulseaudio#input": {
+    "format": "{format_source}",
+    "format-source": "󰍬  {source_volume}",
+    "format-source-muted": "󰍭",
+    "tooltip-format": "Micrófono · {source_volume}%\nRueda: subir/bajar · Medio: mutear",
+    "scroll-step": 5,
+    "on-click-middle": "__BIN__/rice-volume mic-mute",
+    "on-scroll-up": "__BIN__/rice-volume mic-up",
+    "on-scroll-down": "__BIN__/rice-volume mic-down"
+  }
+}

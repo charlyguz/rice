@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Historial de portapapeles (SUPER+V). Motor: cliphist + wl-clipboard.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+command -v cliphist >/dev/null 2>&1 || { notify-send -a rice "Portapapeles" "Falta 'cliphist'"; exit 1; }
+case "${1:-show}" in
+  wipe)  cliphist wipe; notify-send -a rice "Portapapeles" "Historial borrado" ;;
+  *)     sel=$(cliphist list | rice-menu "Portapapeles") || exit 0
+         [ -n "$sel" ] || exit 0
+         printf '%s' "$sel" | cliphist decode | wl-copy ;;
+esac

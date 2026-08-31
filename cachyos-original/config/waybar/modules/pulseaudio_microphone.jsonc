@@ -1,0 +1,14 @@
+{
+  "pulseaudio#microphone": {
+    "format": "{format_source}",
+    "rotate": 0,
+    "format-source": "\udb80\udf6c",
+    "format-source-muted": "\uf131",
+    "on-click": "noctalia msg panel-toggle control-center audio",
+    "on-click-middle": "noctalia msg mic-mute",
+    "on-scroll-up": "noctalia msg mic-volume-up",
+    "on-scroll-down": "noctalia msg mic-volume-down",
+    "tooltip-format": "{format_source} {source_desc} // {source_volume}%",
+    "scroll-step": 5
+  }
+}

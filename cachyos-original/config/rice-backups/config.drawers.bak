@@ -1,0 +1,164 @@
+// ============================================================
+//  Disposición de HyDE (hyprdots/04) + drawers y menús
+//
+//  DOS TÉCNICAS para que las cosas salgan DONDE LE PICAS:
+//
+//  1) DRAWER  -> pasas el mouse encima y la isla se expande
+//                mostrando más módulos. Definidos en
+//                modules/group-*.jsonc
+//
+//  2) MENÚ    -> clic derecho abre un menú GTK pegado al botón.
+//                El contenido está en menus/*.xml y los comandos
+//                en "menu-actions" aquí abajo.
+//
+//  Disposición HyDE: sistema y reloj IZQUIERDA, workspaces CENTRO.
+// ============================================================
+{
+  "layer": "top",
+  "position": "top",
+  "output": ["*"],
+  "height": 42,
+  "exclusive": true,
+  "passthrough": false,
+  "reload_style_on_change": true,
+
+  "include": [
+    "/home/charly/.config/waybar/modules/cpu.jsonc",
+    "/home/charly/.config/waybar/modules/memory.jsonc",
+    "/home/charly/.config/waybar/modules/temperature.jsonc",
+    "/home/charly/.config/waybar/modules/clock.jsonc",
+    "/home/charly/.config/waybar/modules/network.jsonc",
+    "/home/charly/.config/waybar/modules/battery.jsonc",
+    "/home/charly/.config/waybar/modules/tray.jsonc",
+    "/home/charly/.config/waybar/modules/idle_inhibitor.jsonc",
+    "/home/charly/.config/waybar/modules/hyprland-workspaces.jsonc",
+    "/home/charly/.config/waybar/modules/group-volumecontrol.jsonc",
+    "/home/charly/.config/waybar/modules/group-system.jsonc"
+  ],
+
+  // ============ IZQUIERDA ============
+  "modules-left": [
+    "group/pill#left1",
+    "group/pill#left2"
+  ],
+
+  // El logo + el drawer de sistema (hover para ver RAM/temp/updates)
+  "group/pill#left1": {
+    "orientation": "inherit",
+    "modules": ["custom/logo", "group/system"]
+  },
+
+  "group/pill#left2": {
+    "orientation": "inherit",
+    "modules": ["idle_inhibitor", "clock"]
+  },
+
+  // ============ CENTRO ============
+  "modules-center": [
+    "group/pill#center"
+  ],
+
+  "group/pill#center": {
+    "orientation": "inherit",
+    "modules": ["hyprland/workspaces", "mpris"]
+  },
+
+  // ============ DERECHA ============
+  "modules-right": [
+    "group/pill#right1",
+    "group/pill#right2",
+    "group/pill#right3"
+  ],
+
+  // Brillo + drawer de volumen (hover para ver el micrófono) + red
+  "group/pill#right1": {
+    "orientation": "inherit",
+    "modules": ["backlight", "group/volumecontrol", "network"]
+  },
+
+  "group/pill#right2": {
+    "orientation": "inherit",
+    "modules": ["tray", "battery"]
+  },
+
+  // Herramientas y energía: ambos abren MENÚ con clic derecho
+  "group/pill#right3": {
+    "orientation": "inherit",
+    "modules": ["custom/tools", "custom/power"]
+  },
+
+  // ==================== DEFINICIONES ====================
+
+  "custom/logo": {
+    "format": "󰣇",
+    "tooltip": true,
+    "tooltip-format": "Lanzador de aplicaciones",
+    "on-click": "noctalia msg panel-toggle launcher"
+  },
+
+  "mpris": {
+    "format": "󰎇  {title}",
+    "format-paused": "󰏤  {title}",
+    "format-stopped": "󰎇  —",
+    // Súbelo y otros módulos empezarán a mostrar "…" por falta de espacio
+    "max-length": 24,
+    "tooltip-format": "{player}: {title}\n{artist}",
+    "on-click": "noctalia msg media toggle",
+    "on-scroll-up": "noctalia msg media next",
+    "on-scroll-down": "noctalia msg media previous"
+  },
+
+  "backlight": {
+    "device": "nvidia_0",
+    "format": "󰃟  {percent}",
+    "tooltip-format": "Brillo: {percent}%\nRueda para ajustar",
+    "on-scroll-up": "noctalia msg brightness-up",
+    "on-scroll-down": "noctalia msg brightness-down"
+  },
+
+  "custom/updates": {
+    "format": "󰇚 {}",
+    "exec": "checkupdates 2>/dev/null | wc -l",
+    "interval": 1800,
+    "tooltip": true,
+    "tooltip-format": "Actualizaciones pendientes de pacman",
+    "on-click": "alacritty -e sh -c 'checkupdates; read -p \"Enter para cerrar\"'"
+  },
+
+  // ---------- MENÚ DE HERRAMIENTAS ----------
+  // Clic izquierdo Y derecho abren el menú, justo debajo del botón.
+  "custom/tools": {
+    "format": "󰒓",
+    "tooltip": true,
+    "tooltip-format": "Herramientas",
+    "menu": "on-click",
+    "menu-file": "/home/charly/.config/waybar/menus/tools.xml",
+    "menu-actions": {
+      "wallpaper":  "noctalia msg panel-toggle wallpaper",
+      "wallnext":   "noctalia msg wallpaper-random",
+      "clipboard":  "noctalia msg panel-toggle clipboard",
+      "shotregion": "noctalia msg screenshot-region",
+      "shotfull":   "noctalia msg screenshot-fullscreen",
+      "theme":      "noctalia msg theme-mode-toggle",
+      "nightlight": "noctalia msg nightlight-toggle",
+      "dnd":        "noctalia msg notification-dnd-toggle",
+      "settings":   "noctalia msg settings-toggle"
+    }
+  },
+
+  // ---------- MENÚ DE ENERGÍA ----------
+  "custom/power": {
+    "format": "󰐥",
+    "tooltip": true,
+    "tooltip-format": "Energía",
+    "menu": "on-click",
+    "menu-file": "/home/charly/.config/waybar/menus/power.xml",
+    "menu-actions": {
+      "lock":     "noctalia msg session lock",
+      "suspend":  "noctalia msg session suspend",
+      "logout":   "noctalia msg session logout",
+      "reboot":   "noctalia msg session reboot",
+      "shutdown": "noctalia msg session shutdown"
+    }
+  }
+}

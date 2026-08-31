@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Fondos de pantalla.  menu · next · prev · set <ruta> · restore · random
+# Motor: swww si está (con transición), si no hyprpaper, si no swaybg.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}/rice"
+STATE="$CFG/current-wallpaper"
+mkdir -p "$CFG"
+
+# Carpeta de fondos: la primera que exista y tenga imágenes
+for d in "$HOME/Pictures/Wallpapers" "$HOME/Imágenes/Wallpapers" \
+         "${XDG_DATA_HOME:-$HOME/.local/share}/rice/wallpapers" \
+         "$HOME/Pictures" "$HOME/Imágenes"; do
+  [ -d "$d" ] && [ -n "$(find "$d" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -print -quit)" ] && { WDIR="$d"; break; }
+done
+WDIR="${WDIR:-$HOME/Pictures}"
+
+list() { find "$WDIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+apply() {
+  local img="$1"
+  [ -f "$img" ] || return 1
+  if have swww; then
+    swww query >/dev/null 2>&1 || { swww-daemon >/dev/null 2>&1 & sleep 1; }
+    swww img "$img" --transition-type grow --transition-fps 60 --transition-duration 1
+  elif have hyprpaper && have hyprctl; then
+    # Secuencia explícita: funciona en todas las versiones de hyprpaper
+    # y además libera la imagen anterior (si no, se va comiendo la RAM).
+    hyprctl hyprpaper unload all   >/dev/null 2>&1 || true
+    hyprctl hyprpaper preload "$img" >/dev/null 2>&1
+    hyprctl hyprpaper wallpaper ",$img" >/dev/null 2>&1
+  elif have swaybg; then
+    pkill swaybg 2>/dev/null || true; swaybg -i "$img" -m fill >/dev/null 2>&1 & disown
+  else
+    notify-send -a rice "Fondo" "Instala swww o hyprpaper"; return 1
+  fi
+  echo "$img" > "$STATE"
+}
+
+step() { # step +1 | -1
+  local -a all; mapfile -t all < <(list)
+  [ "${#all[@]}" -gt 0 ] || { notify-send -a rice "Fondo" "No hay imágenes en $WDIR"; exit 1; }
+  local cur i=0 n=${#all[@]}
+  cur=$( [ -f "$STATE" ] && cat "$STATE" || echo "" )
+  for j in "${!all[@]}"; do [ "${all[$j]}" = "$cur" ] && i=$j; done
+  i=$(( (i + $1 + n) % n ))
+  apply "${all[$i]}"
+}
+
+case "${1:-menu}" in
+  set)     apply "${2:?falta la ruta}" ;;
+  next)    step 1 ;;
+  prev)    step -1 ;;
+  random)  apply "$(list | shuf -n1)" ;;
+  restore) [ -f "$STATE" ] && apply "$(cat "$STATE")" || apply "$(list | head -1)" ;;
+  dir)     echo "$WDIR" ;;
+  menu|*)
+      # rofi y fuzzel entienden el mismo protocolo de iconos del dmenu
+      if command -v rofi >/dev/null 2>&1 && [ "$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/rice/menu" 2>/dev/null)" != fuzzel ]; then
+        sel=$(list | while read -r f; do printf '%s\0icon\x1f%s\n' "$(basename "$f")" "$f"; done \
+              | rofi -dmenu -i -p "Fondo" -show-icons -theme-str 'element-icon{size:6em;} listview{columns:3;lines:2;}') || exit 0
+        [ -n "$sel" ] && apply "$WDIR/$sel"
+      else
+        sel=$(list | xargs -r -n1 basename | rice-menu "Fondo") || exit 0
+        [ -n "$sel" ] && apply "$WDIR/$sel"
+      fi ;;
+esac

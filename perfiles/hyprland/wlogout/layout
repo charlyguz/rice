@@ -1,0 +1,5 @@
+{ "label": "lock",     "action": "__BIN__/rice-session lock",     "text": "Bloquear",     "keybind": "l" }
+{ "label": "logout",   "action": "__BIN__/rice-session logout",   "text": "Cerrar sesión","keybind": "e" }
+{ "label": "suspend",  "action": "__BIN__/rice-session suspend",  "text": "Suspender",    "keybind": "u" }
+{ "label": "reboot",   "action": "systemctl reboot",      "text": "Reiniciar",    "keybind": "r" }
+{ "label": "shutdown", "action": "systemctl poweroff",    "text": "Apagar",       "keybind": "s" }

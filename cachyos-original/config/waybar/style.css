@@ -1,0 +1,16 @@
+/* ============================================================
+ *  Punto de entrada del CSS. Misma cadena de imports que usa HyDE.
+ *  Recarga en caliente:   killall -SIGUSR2 waybar
+ * ============================================================ */
+
+/* Colores: traduce los nombres de HyDE a la paleta de Noctalia */
+@import "theme.css";
+
+/* Estilos base de HyDE (islas, pills, animaciones de workspace).
+ * Descargados verbatim del repo. No los edites: se sobrescriben
+ * si vuelves a correr la descarga. Para cambios usa user-style.css */
+@import "styles/defaults.css";
+
+/* TUS cambios van aquí. Se aplica al final, así que gana sobre todo
+ * lo anterior. Es el archivo donde debes pegar cosas de unixporn. */
+@import "user-style.css";

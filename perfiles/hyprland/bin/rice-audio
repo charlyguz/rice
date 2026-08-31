@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+have() { command -v "$1" >/dev/null 2>&1; }
+if   have pavucontrol;    then exec pavucontrol
+elif have pwvucontrol;    then exec pwvucontrol
+else exec "${TERMINAL:-kitty}" -e "$( have wiremix && echo wiremix || echo alsamixer )"; fi

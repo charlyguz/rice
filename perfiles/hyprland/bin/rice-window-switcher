@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Cambiador de ventanas (SUPER+Tab).
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+if command -v rofi >/dev/null 2>&1; then exec rofi -show window -show-icons; fi
+command -v hyprctl >/dev/null 2>&1 || exit 1
+sel=$(hyprctl -j clients | jq -r '.[] | select(.mapped) | "\(.address)\t\(.class) — \(.title)"' \
+      | awk -F'\t' '{print $2"\t"$1}' | rice-menu "Ventana") || exit 0
+addr=$(printf '%s' "$sel" | cut -f2)
+[ -n "$addr" ] && hyprctl dispatch focuswindow "address:$addr"

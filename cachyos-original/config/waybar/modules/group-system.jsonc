@@ -1,0 +1,21 @@
+/*
+ * DRAWER de sistema.
+ *
+ * Solo se ve el CPU. Al pasar el mouse aparecen RAM, temperatura
+ * y actualizaciones pendientes, desplegándose desde ahí mismo.
+ *
+ * Los módulos cpu/memory/temperature se definen en sus propios
+ * archivos (cpu.jsonc, memory.jsonc, temperature.jsonc).
+ */
+{
+  "group/system": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 350,
+      "children-class": "system-drawer",
+      "transition-left-to-right": true,
+      "click-to-reveal": false
+    },
+    "modules": ["cpu", "memory", "temperature", "custom/updates"]
+  }
+}

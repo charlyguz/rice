@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Centro de control / notificaciones (lo que en Noctalia era el control-center).
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+for c in swaync-client sway-notification-center-client; do
+  command -v "$c" >/dev/null 2>&1 && exec "$c" -t -sw
+done
+if command -v makoctl >/dev/null 2>&1; then makoctl restore; exit; fi
+notify-send -a rice "Panel" "Instala swaync (en Debian: sway-notification-center)"

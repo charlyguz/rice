@@ -1,0 +1,14 @@
+/*
+ * Redondeo de las islas. En HyDE esto lo genera su motor de temas.
+ * Aquí es un archivo normal que puedes editar.
+ *
+ * Sube el valor = islas más redondas (10pt es el default de HyDE,
+ * 20pt las vuelve cápsulas completas).
+ */
+
+window#waybar.top #pill,
+window#waybar.top #pill button,
+window#waybar.bottom #pill,
+window#waybar.bottom #pill button {
+    border-radius: 14pt;
+}

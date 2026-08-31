@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Volumen y micrófono.  up · down · mute · mic-up · mic-down · mic-mute
+# Motor: wpctl (PipeWire) con fallback a pactl (PulseAudio).
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+STEP="${RICE_VOL_STEP:-5}"
+have() { command -v "$1" >/dev/null 2>&1; }
+
+osd() { # muestra OSD si hay swayosd, si no notificación
+  have swayosd-client && return 1 || return 0
+}
+
+vol_get() {
+  if have wpctl; then wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2*100}'
+  else pactl get-sink-volume @DEFAULT_SINK@ | head -1 | grep -o '[0-9]*%' | head -1 | tr -d '%'; fi
+}
+
+notify_vol() {
+  local v; v=$(vol_get)
+  have notify-send && notify-send -a rice -h string:x-canonical-private-synchronous:rice-vol \
+     -h "int:value:$v" "Volumen  ${v}%" || true
+}
+
+case "${1:?up|down|mute|mic-up|mic-down|mic-mute}" in
+  up)
+    if have swayosd-client; then swayosd-client --output-volume raise; exit; fi
+    if have wpctl; then wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "${STEP}%+"; else pactl set-sink-volume @DEFAULT_SINK@ "+${STEP}%"; fi
+    notify_vol ;;
+  down)
+    if have swayosd-client; then swayosd-client --output-volume lower; exit; fi
+    if have wpctl; then wpctl set-volume @DEFAULT_AUDIO_SINK@ "${STEP}%-"; else pactl set-sink-volume @DEFAULT_SINK@ "-${STEP}%"; fi
+    notify_vol ;;
+  mute)
+    if have swayosd-client; then swayosd-client --output-volume mute-toggle; exit; fi
+    if have wpctl; then wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle; else pactl set-sink-mute @DEFAULT_SINK@ toggle; fi ;;
+  mic-up)
+    if have swayosd-client; then swayosd-client --input-volume raise; exit; fi
+    if have wpctl; then wpctl set-volume @DEFAULT_AUDIO_SOURCE@ "${STEP}%+"; else pactl set-source-volume @DEFAULT_SOURCE@ "+${STEP}%"; fi ;;
+  mic-down)
+    if have swayosd-client; then swayosd-client --input-volume lower; exit; fi
+    if have wpctl; then wpctl set-volume @DEFAULT_AUDIO_SOURCE@ "${STEP}%-"; else pactl set-source-volume @DEFAULT_SOURCE@ "-${STEP}%"; fi ;;
+  mic-mute)
+    if have swayosd-client; then swayosd-client --input-volume mute-toggle; exit; fi
+    if have wpctl; then wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; else pactl set-source-mute @DEFAULT_SOURCE@ toggle; fi ;;
+esac

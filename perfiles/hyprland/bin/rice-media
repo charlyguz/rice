@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Control de reproducción.  toggle · next · prev · stop · status
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+command -v playerctl >/dev/null 2>&1 || { notify-send -a rice "Media" "Falta 'playerctl'"; exit 1; }
+case "${1:-toggle}" in
+  toggle) playerctl play-pause ;;
+  next)   playerctl next ;;
+  prev)   playerctl previous ;;
+  stop)   playerctl stop ;;
+  status) playerctl metadata --format '{{artist}} — {{title}}' 2>/dev/null || echo "—" ;;
+esac

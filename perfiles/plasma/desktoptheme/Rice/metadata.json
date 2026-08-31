@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "rice" }],
+        "Description": "Panel flotante translúcido con esquinas redondeadas y borde de acento. Sigue el esquema de color del sistema.",
+        "Id": "Rice",
+        "License": "GPL-3.0-or-later",
+        "Name": "Rice",
+        "Version": "1.0"
+    },
+    "X-Plasma-API": "5.0"
+}

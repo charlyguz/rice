@@ -1,0 +1,147 @@
+// ============================================================
+//  Waybar - QUÉ se muestra y en qué orden.
+//  El CÓMO se ve (colores, bordes, tamaños) va en style.css
+//  Docs: https://github.com/Alexays/Waybar/wiki/Configuration
+// ============================================================
+{
+  "layer": "top",
+  "position": "top",
+  "height": 38,
+  // Espacio entre las "islas" de módulos.
+  "spacing": 0,
+  // Márgenes: hacen que la barra "flote" separada del borde.
+  "margin-top": 6,
+  "margin-left": 10,
+  "margin-right": 10,
+
+  // ---- Distribución: izquierda / centro / derecha ----
+  "modules-left": [
+    "custom/logo",
+    "hyprland/workspaces",
+    "hyprland/window"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "tray",
+    "cpu",
+    "memory",
+    "pulseaudio",
+    "network",
+    "battery",
+    "custom/notifications",
+    "custom/power"
+  ],
+
+  // ================= MÓDULOS =================
+
+  // Logo: abre el launcher de Noctalia
+  "custom/logo": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "noctalia msg panel-toggle launcher"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{icon}",
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    // Punto pequeño para los inactivos, punto lleno para el activo.
+    // El ensanchado de la pastilla activa lo hace el CSS.
+    "format-icons": {
+      "default": "○",
+      "active": "●",
+      "urgent": "◉"
+    }
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 45,
+    "separate-outputs": true,
+    "rewrite": {
+      "": "󰍹  Escritorio"
+    }
+  },
+
+  "clock": {
+    "format": "󰥔  {:%H:%M}",
+    "format-alt": "󰃭  {:%A, %d de %B %Y}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#e2e2e9'><b>{}</b></span>",
+        "days": "<span color='#bec6dc'>{}</span>",
+        "today": "<span color='#abc7ff'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+  "cpu": {
+    "format": "󰘚  {usage}%",
+    "interval": 2,
+    "on-click": "alacritty -e btop"
+  },
+
+  "memory": {
+    "format": "󰍛  {percentage}%",
+    "interval": 5,
+    "tooltip-format": "RAM: {used:0.1f}G / {total:0.1f}G",
+    "on-click": "alacritty -e btop"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "󰝟  muted",
+    "format-icons": {
+      "headphone": "󰋋",
+      "headset": "󰋋",
+      "default": ["󰕿", "󰖀", "󰕾"]
+    },
+    "scroll-step": 5,
+    "on-click": "noctalia msg panel-toggle control-center",
+    "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+  },
+
+  "network": {
+    "format-wifi": "󰤨  {signalStrength}%",
+    "format-ethernet": "󰈀  LAN",
+    "format-disconnected": "󰖪  Sin red",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+    "on-click": "noctalia msg panel-toggle control-center"
+  },
+
+  "battery": {
+    "bat": "BAT1",
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon}  {capacity}%",
+    "format-charging": "󰂄  {capacity}%",
+    "format-plugged": "󰚥  {capacity}%",
+    "format-icons": ["󰁺", "󰁾", "󰂀", "󰂂", "󰁹"]
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10
+  },
+
+  "custom/notifications": {
+    "format": "󰂚",
+    "tooltip": false,
+    "on-click": "noctalia msg panel-toggle notifications"
+  },
+
+  "custom/power": {
+    "format": "󰐥",
+    "tooltip": false,
+    "on-click": "noctalia msg panel-toggle session"
+  }
+}

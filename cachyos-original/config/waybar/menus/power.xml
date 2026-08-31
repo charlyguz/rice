@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Menú de energía. Sale JUSTO donde está el botón, no en el centro.
+  Los ids de aquí se conectan con "menu-actions" en config.jsonc.
+  Para agregar una opción: copia un bloque <child>, cámbiale el id,
+  y añade ese id en menu-actions con el comando que quieras.
+-->
+<interface>
+  <object class="GtkMenu" id="menu">
+
+    <child>
+      <object class="GtkMenuItem" id="lock">
+        <property name="label">󰍁   Bloquear</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="suspend">
+        <property name="label">󰏦   Suspender</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep1" />
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="logout">
+        <property name="label">󰍃   Cerrar sesión</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="reboot">
+        <property name="label">󰜉   Reiniciar</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="shutdown">
+        <property name="label">󰚦   Apagar</property>
+      </object>
+    </child>
+
+  </object>
+</interface>

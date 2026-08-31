@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Lanzador de aplicaciones (SUPER+Space). 'emoji' abre el selector de emojis.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+pref="${RICE_MENU:-$( [ -f "$CFG/rice/menu" ] && cat "$CFG/rice/menu" || echo "" )}"
+have() { command -v "$1" >/dev/null 2>&1; }
+
+apps() {
+  case "$pref" in
+    fuzzel) have fuzzel && exec fuzzel ;;
+    rofi)   have rofi   && exec rofi -show drun -show-icons ;;
+  esac
+  if   have rofi;   then exec rofi -show drun -show-icons
+  elif have fuzzel; then exec fuzzel
+  elif have wofi;   then exec wofi --show drun
+  else echo "instala rofi o fuzzel" >&2; exit 1; fi
+}
+
+case "${1:-apps}" in
+  emoji)
+    have rofimoji && exec rofimoji
+    if have rofi && rofi -h 2>&1 | grep -q emoji; then exec rofi -show emoji; fi
+    # Fallback sin dependencias: lista corta, copia al portapapeles
+    printf '%s\n' "😀 grinning" "😂 joy" "🥲 tear" "😍 heart eyes" "🤔 thinking" \
+      "👍 thumbs up" "👎 thumbs down" "🙏 pray" "🔥 fire" "🎉 party" "💀 skull" \
+      "❤️ heart" "✅ check" "❌ cross" "⚠️ warning" "🚀 rocket" "🐧 penguin" "☕ coffee" \
+      | rice-menu "Emoji" | cut -d' ' -f1 | tr -d '\n' | wl-copy
+    ;;
+  *) apps ;;
+esac

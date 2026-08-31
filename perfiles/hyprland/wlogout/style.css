@@ -1,0 +1,28 @@
+@import url("colors.css");
+
+window { background-color: alpha(@window_bg_color, 0.75); }
+
+button {
+  background-color: alpha(@card_bg_color, 0.6);
+  color: @window_fg_color;
+  border: 2px solid alpha(@accent_bg_color, 0.35);
+  border-radius: 20px;
+  margin: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: 18px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 22%;
+  transition: 200ms;
+}
+button:focus, button:hover {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
+  border-color: @accent_bg_color;
+}
+
+#lock     { background-image: image(url("/usr/share/wlogout/icons/lock.png")); }
+#logout   { background-image: image(url("/usr/share/wlogout/icons/logout.png")); }
+#suspend  { background-image: image(url("/usr/share/wlogout/icons/suspend.png")); }
+#reboot   { background-image: image(url("/usr/share/wlogout/icons/reboot.png")); }
+#shutdown { background-image: image(url("/usr/share/wlogout/icons/shutdown.png")); }

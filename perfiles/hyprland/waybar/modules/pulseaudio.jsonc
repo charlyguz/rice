@@ -1,0 +1,23 @@
+{
+  "pulseaudio": {
+    "format": "{icon} {volume}",
+    "rotate": 0,
+    "format-muted": "婢",
+    "on-click": "__BIN__/rice-audio",
+    "on-click-right": "__BIN__/rice-audio",
+    "on-click-middle": "__BIN__/rice-volume mute",
+    "on-scroll-up": "__BIN__/rice-volume up",
+    "on-scroll-down": "__BIN__/rice-volume down",
+    "tooltip-format": "{icon} {desc} // {volume}%",
+    "scroll-step": 5,
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "",
+      "headset": "",
+      "phone": "",
+      "portable": "",
+      "car": "",
+      "default": ["", "", ""]
+    }
+  }
+}

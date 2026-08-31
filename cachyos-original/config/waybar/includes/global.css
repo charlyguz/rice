@@ -1,0 +1,21 @@
+/*
+ * Ajustes globales: fuente y tamaño base de TODA la barra.
+ * HyDE original usa "JetBrainsMono Nerd Font". Como no la tienes
+ * instalada, aquí va MesloLGS (que sí tienes y cubre los iconos).
+ *
+ * Para usar la fuente original de HyDE:
+ *     sudo pacman -S ttf-jetbrains-mono-nerd
+ * y luego cambia font-family aquí abajo.
+ *
+ * font-size controla el tamaño de TODO (HyDE usa em, así que
+ * subir esto agranda la barra entera proporcionalmente).
+ */
+
+* {
+    border-radius: 0em;
+    /* Rubik dibuja el texto; la Nerd Font entra solo para los iconos
+     * que Rubik no tiene (GTK hace el fallback automático). */
+    font-family: "Outfit", "JetBrainsMono Nerd Font", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+}

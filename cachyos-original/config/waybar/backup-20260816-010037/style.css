@@ -1,0 +1,176 @@
+/* ============================================================
+ *  Waybar - CÓMO se ve.  Esto SÍ es CSS (GTK3 CSS).
+ *  Aquí es donde pegas cosas de dotfiles de unixporn.
+ *
+ *  Recarga sin reiniciar:  killall -SIGUSR2 waybar
+ * ============================================================ */
+
+/* Trae la paleta que Noctalia genera desde tu wallpaper.
+ * Se regenera sola cada vez que cambias de fondo, así que la
+ * barra siempre combina. Define: @accent_bg_color, @accent_fg_color,
+ * @window_bg_color, @window_fg_color, @card_bg_color, @error_bg_color...
+ * Si prefieres colores fijos, borra esta línea y define los tuyos:
+ *   @define-color accent_bg_color #abc7ff;                        */
+@import url("../gtk-3.0/noctalia.css");
+
+/* Atajos propios construidos sobre la paleta de arriba. */
+@define-color bar_bg      transparent;
+@define-color island_bg   @card_bg_color;      /* fondo de cada isla  */
+@define-color text        @window_fg_color;    /* texto normal        */
+@define-color accent      @accent_bg_color;    /* color de acento     */
+@define-color on_accent   @accent_fg_color;    /* texto sobre acento  */
+@define-color urgent      @error_bg_color;
+
+/* ---------- Base ---------- */
+* {
+  font-family: "MesloLGS Nerd Font", "FantasqueSansM Nerd Font", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  /* Quita el borde punteado de foco de GTK */
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+}
+
+/* La barra en sí es invisible: solo flotan las islas. */
+window#waybar {
+  background: @bar_bg;
+  color: @text;
+}
+
+/* ---------- Las "islas" (el look HyDE) ----------
+ * Cada módulo es una pastilla redondeada con fondo propio.
+ * border-radius grande = más redondo. padding = más gordita. */
+#custom-logo,
+#workspaces,
+#window,
+#clock,
+#cpu,
+#memory,
+#pulseaudio,
+#network,
+#battery,
+#tray,
+#custom-notifications,
+#custom-power {
+  background: @island_bg;
+  color: @text;
+  border-radius: 12px;
+  padding: 2px 12px;
+  margin: 4px 3px;
+}
+
+/* ---------- Logo ---------- */
+#custom-logo {
+  color: @accent;
+  font-size: 17px;
+  padding: 2px 14px;
+}
+
+#custom-logo:hover {
+  background: @accent;
+  color: @on_accent;
+}
+
+/* ---------- Workspaces ----------
+ * El contenedor es una isla; cada botón es una pastilla dentro. */
+#workspaces {
+  padding: 2px 6px;
+}
+
+#workspaces button {
+  color: @text;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0 8px;
+  margin: 2px 2px;
+  /* Anima el ensanchado de la pastilla activa */
+  transition: all 200ms ease;
+}
+
+#workspaces button.active {
+  background: @accent;
+  color: @on_accent;
+  /* Más ancho que los inactivos: el detalle que hace el look */
+  padding: 0 18px;
+}
+
+#workspaces button.urgent {
+  background: @urgent;
+  color: @on_accent;
+}
+
+#workspaces button:hover {
+  background: @accent;
+  color: @on_accent;
+}
+
+/* ---------- Ventana activa ---------- */
+#window {
+  color: @accent;
+  padding: 2px 16px;
+}
+
+/* Cuando no hay ventana enfocada, esconde la isla */
+window#waybar.empty #window {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+/* ---------- Reloj (centro) ---------- */
+#clock {
+  background: @accent;
+  color: @on_accent;
+  font-weight: 700;
+  padding: 2px 18px;
+}
+
+/* ---------- Módulos de sistema ---------- */
+#cpu      { color: @accent; }
+#memory   { color: @accent; }
+#pulseaudio { color: @accent; }
+#network  { color: @accent; }
+
+#pulseaudio.muted,
+#network.disconnected {
+  color: @urgent;
+}
+
+/* ---------- Batería ---------- */
+#battery { color: @accent; }
+#battery.charging { color: @accent; }
+#battery.warning:not(.charging) { color: #ffd479; }
+#battery.critical:not(.charging) {
+  background: @urgent;
+  color: @on_accent;
+}
+
+/* ---------- Bandeja ---------- */
+#tray { padding: 2px 10px; }
+#tray menu { background: @island_bg; color: @text; }
+
+/* ---------- Botones de la derecha ---------- */
+#custom-notifications { color: @accent; }
+#custom-notifications:hover { background: @accent; color: @on_accent; }
+
+#custom-power {
+  background: @urgent;
+  color: @window_bg_color;
+  font-size: 14px;
+  padding: 2px 14px;
+}
+
+#custom-power:hover {
+  background: @accent;
+  color: @on_accent;
+}
+
+/* ---------- Tooltips ---------- */
+tooltip {
+  background: @island_bg;
+  border-radius: 12px;
+  border: 1px solid @accent;
+}
+
+tooltip label { color: @text; padding: 4px; }

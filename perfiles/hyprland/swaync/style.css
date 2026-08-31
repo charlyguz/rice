@@ -1,0 +1,50 @@
+/* Notificaciones y centro de control, con el mismo look que la barra. */
+@import url("colors.css");
+
+* { font-family: "Outfit", "JetBrainsMono Nerd Font", sans-serif; font-size: 14px; }
+
+.notification-row { outline: none; }
+
+.notification {
+  background: alpha(@card_bg_color, 0.85);
+  border: 2px solid alpha(@accent_bg_color, 0.45);
+  border-radius: 16px;
+  margin: 6px 8px;
+  padding: 0;
+}
+.notification-content { padding: 10px; color: @window_fg_color; }
+.summary { font-weight: 700; color: @window_fg_color; }
+.body    { color: @rice_dim; }
+.time    { color: @rice_dim; font-size: 12px; }
+
+.close-button {
+  background: transparent; color: @window_fg_color;
+  border-radius: 10px; margin: 6px; padding: 2px 8px;
+}
+.close-button:hover { background: @error_bg_color; color: @accent_fg_color; }
+
+.notification-action, .notification-default-action { background: transparent; }
+.notification-action:hover { background: alpha(@accent_bg_color, 0.35); border-radius: 12px; }
+
+.control-center {
+  background: alpha(@window_bg_color, 0.80);
+  border: 2px solid alpha(@accent_bg_color, 0.45);
+  border-radius: 20px;
+  padding: 10px;
+}
+.widget-title { color: @window_fg_color; font-size: 18px; font-weight: 700; padding: 6px 10px; }
+.widget-title > button {
+  background: alpha(@accent_bg_color, 0.25); color: @window_fg_color;
+  border-radius: 12px; padding: 4px 12px; border: none;
+}
+.widget-title > button:hover { background: @accent_bg_color; color: @accent_fg_color; }
+
+.widget-dnd { color: @window_fg_color; padding: 6px 10px; }
+.widget-dnd > switch { background: @rice_surface; border-radius: 12px; }
+.widget-dnd > switch:checked { background: @accent_bg_color; }
+
+.widget-mpris { background: alpha(@card_bg_color, 0.7); border-radius: 16px; padding: 8px; margin: 6px 0; }
+.widget-volume, .widget-backlight { background: alpha(@card_bg_color, 0.7); border-radius: 16px; padding: 8px 12px; margin: 6px 0; color: @window_fg_color; }
+
+trough { background: @rice_surface; border-radius: 10px; }
+highlight, progress { background: @accent_bg_color; border-radius: 10px; }

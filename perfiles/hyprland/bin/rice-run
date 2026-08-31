@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Lanza una app metiéndola en su propio scope de systemd cuando la sesión
+# arrancó con UWSM (así CachyOS lo hace). Si no hay UWSM, lanza normal.
+# Existe para que los mismos binds funcionen en cualquier distro.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+if command -v uwsm >/dev/null 2>&1 && systemctl --user -q is-active wayland-wm@hyprland.service 2>/dev/null; then
+  exec uwsm app -- "$@"
+fi
+exec "$@"

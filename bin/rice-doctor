@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# ============================================================
+#  rice-doctor — revisión del escritorio. Qué está puesto,
+#  qué falta, y qué se está usando en su lugar.
+# ============================================================
+set -uo pipefail
+PATH="$HOME/.local/bin:$PATH"; export PATH
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"; DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+if [ -t 1 ]; then G=$'\033[32m'; Y=$'\033[33m'; R=$'\033[31m'; B=$'\033[1m'; D=$'\033[2m'; N=$'\033[0m'
+else G=; Y=; R=; B=; D=; N=; fi
+PROB=0
+pad() { local n=$((26-${#1})); [ "$n" -lt 1 ] && n=1; printf '%s%*s' "$1" "$n" ""; }
+h()  { printf '\n%s%s%s\n' "$B" "$1" "$N"; }
+yes(){ printf '  %s✓%s %s%s%s%s\n' "$G" "$N" "$(pad "$1")" "$D" "${2:-}" "$N"; }
+no() { printf '  %s✗%s %s%s\n' "$R" "$N" "$(pad "$1")" "${2:-}"; PROB=$((PROB+1)); }
+alt(){ printf '  %s~%s %s%s\n' "$Y" "$N" "$(pad "$1")" "${2:-}"; }
+kv() { printf '  %s%s\n' "$(pad "$1")" "${2:-}"; }
+have(){ command -v "$1" >/dev/null 2>&1; }
+kr() { # leer una clave de config de KDE
+  if have kreadconfig6; then kreadconfig6 "$@" 2>/dev/null
+  elif have kreadconfig5; then kreadconfig5 "$@" 2>/dev/null; fi
+}
+
+h "Sistema"
+. /etc/os-release 2>/dev/null || true
+kv "distro" "${PRETTY_NAME:-?}"
+kv "sesión" "${XDG_CURRENT_DESKTOP:-—} / ${XDG_SESSION_TYPE:-—}"
+have plasmashell && kv "plasma" "$(plasmashell --version 2>/dev/null | awk '{print $2}')" || no "plasma" "no encuentro plasmashell"
+GPUV=""
+for f in /sys/class/drm/card[0-9]*/device/vendor; do
+  [ -r "$f" ] || continue
+  case "$(cat "$f")" in 0x10de) GPUV="$GPUV NVIDIA";; 0x1002|0x1022) GPUV="$GPUV AMD";; 0x8086) GPUV="$GPUV Intel";; esac
+done
+kv "gráfica" "$(echo "$GPUV" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+if echo "$GPUV" | grep -q NVIDIA; then
+  [ -d /sys/module/nvidia ] && yes "driver NVIDIA" "cargado" || no "driver NVIDIA" "no cargado"
+  M=$(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null || echo "?")
+  [ "$M" = Y ] && yes "nvidia_drm.modeset" "activo" || no "nvidia_drm.modeset" "en '$M' — Wayland lo necesita en Y"
+fi
+
+h "Herramientas de KDE"
+for t in kwriteconfig6 kreadconfig6 plasma-apply-colorscheme plasma-apply-cursortheme plasma-apply-wallpaperimage; do
+  have "$t" && yes "$t" || no "$t" "falta (viene con plasma-workspace)"
+done
+have gdbus && yes "gdbus" "para hablar con el panel" || alt "gdbus" "sin él no puedo rehacer el panel"
+
+h "Aspecto"
+SCH=$(kr --file kdeglobals --group General --key ColorScheme)
+case "$SCH" in
+  Rice*) yes "esquema de color" "$SCH" ;;
+  "")    no  "esquema de color" "sin definir — corre: rice-theme tokyonight" ;;
+  *)     alt "esquema de color" "$SCH (no es el del repo)" ;;
+esac
+[ -n "$(ls "$DATA"/color-schemes/Rice*.colors 2>/dev/null)" ] \
+  && yes "esquemas generados" "$(ls -1 "$DATA"/color-schemes/Rice*.colors 2>/dev/null | wc -l)" \
+  || no "esquemas generados" "rice-theme no ha corrido"
+kv "paleta" "$(cat "$CFG/rice/current-palette" 2>/dev/null || echo '—')"
+ACC=$(kr --file kdeglobals --group General --key AccentColor)
+[ -n "$ACC" ] && yes "color de acento" "$ACC" || alt "color de acento" "sin definir"
+
+UIF=$(kr --file kdeglobals --group General --key font | cut -d, -f1)
+MOF=$(kr --file kdeglobals --group General --key fixed | cut -d, -f1)
+if fc-list 2>/dev/null | grep -qi "outfit"; then yes "fuente Outfit" "instalada"; else no "fuente Outfit" "no instalada"; fi
+if fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then yes "Nerd Font" "instalada"; else no "Nerd Font" "faltan los iconos"; fi
+[ "$UIF" = "Outfit" ] && yes "fuente de interfaz" "$UIF" || alt "fuente de interfaz" "${UIF:-sin definir}"
+[ "$MOF" = "JetBrainsMono Nerd Font" ] && yes "fuente monoespaciada" "$MOF" || alt "fuente monoespaciada" "${MOF:-sin definir}"
+
+IT=$(kr --file kdeglobals --group Icons --key Theme)
+if [ -n "$IT" ] && { [ -d "$DATA/icons/$IT" ] || [ -d "/usr/share/icons/$IT" ]; }; then yes "iconos" "$IT"; else no "iconos" "pide '$IT' y no existe"; fi
+CT=$(kr --file kcminputrc --group Mouse --key cursorTheme)
+if [ -n "$CT" ] && { [ -d "$DATA/icons/$CT" ] || [ -d "/usr/share/icons/$CT" ]; }; then yes "cursor" "$CT"; else no "cursor" "pide '$CT' y no existe"; fi
+
+h "Efectos de KWin"
+[ "$(kr --file kwinrc --group Plugins --key blurEnabled)" = true ] && yes "blur" "activo" || alt "blur" "apagado"
+TR=$(kr --file kwinrc --group Effect-kwin4_effect_translucency --key Inactive)
+[ -n "$TR" ] && yes "ventanas inactivas" "${TR}% de opacidad" || alt "ventanas inactivas" "sin translucidez"
+kv "escritorios" "$(kr --file kwinrc --group Desktops --key Number || echo '?')"
+kv "decoración" "$(kr --file kwinrc --group org.kde.kdecoration2 --key theme || echo '?') / bordes: $(kr --file kwinrc --group org.kde.kdecoration2 --key BorderSize || echo '?')"
+
+h "Atajos"
+for pair in "Meta+Return:terminal" "Meta+E:archivos" "Meta+V:portapapeles" "Print:captura"; do
+  k="${pair%%:*}"; d="${pair##*:}"
+  if grep -q "$k" "$CFG/kglobalshortcutsrc" 2>/dev/null; then yes "$d" "$k"; else no "$d" "$k no está puesto"; fi
+done
+
+h "Shell"
+if [ "$SHELL" = "$(command -v zsh 2>/dev/null)" ]; then yes "shell por defecto" "zsh"
+elif have zsh; then alt "shell por defecto" "$SHELL (zsh instalado pero sin poner)"
+else no "shell por defecto" "zsh no está instalado"; fi
+[ -f "$HOME/.zshrc" ] && grep -q powerlevel10k "$HOME/.zshrc" && yes ".zshrc" "el del repo" || no ".zshrc" "no es el del repo"
+[ -f "$HOME/.p10k.zsh" ] && yes ".p10k.zsh" "prompt configurado" || no ".p10k.zsh" "falta"
+P10K=0
+for d in /usr/share/zsh-theme-powerlevel10k /usr/share/powerlevel10k "$DATA/zsh/powerlevel10k"; do
+  [ -f "$d/powerlevel10k.zsh-theme" ] && { yes "powerlevel10k" "$d"; P10K=1; break; }
+done
+[ "$P10K" = 0 ] && no "powerlevel10k" "sin el tema, el prompt sale básico"
+for pl in zsh-autosuggestions zsh-syntax-highlighting; do
+  F=0; for d in "/usr/share/$pl" "/usr/share/zsh/plugins/$pl" "$DATA/zsh/$pl"; do [ -f "$d/$pl.zsh" ] && F=1; done
+  [ "$F" = 1 ] && yes "$pl" || alt "$pl" "no instalado"
+done
+
+h "Aplicaciones"
+for a in kitty dolphin konsole spectacle kcalc btop fastfetch zsh; do
+  have "$a" && yes "$a" || alt "$a" "no instalada"
+done
+have code && yes "code" || alt "code" "no instalada"
+{ have brave || have brave-browser; } && yes "brave" || alt "brave" "no instalada"
+
+h "Archivos"
+for f in kitty/kitty.conf kitty/theme.conf gtk-3.0/colors.css btop/themes/rice.theme rice/colors.css; do
+  [ -e "$CFG/$f" ] && yes "$f" || no "$f" "no está"
+done
+[ -f "$DATA/konsole/Rice.colorscheme" ] && yes "konsole/Rice.colorscheme" || alt "konsole" "sin esquema"
+NW=$(find "$HOME/Pictures/Wallpapers" -maxdepth 1 -type f 2>/dev/null | wc -l)
+[ "$NW" -gt 0 ] && yes "fondos" "$NW en ~/Pictures/Wallpapers" || no "fondos" "carpeta vacía"
+
+h "Tema de escritorio"
+TH=$(kr --file plasmarc --group Theme --key name)
+[ "$TH" = Rice ] && yes "tema de Plasma" "Rice (panel translúcido)" || alt "tema de Plasma" "${TH:-breeze} — el del repo es 'Rice'"
+[ -f "$DATA/plasma/desktoptheme/Rice/widgets/panel-background.svg" ] \
+  && yes "SVG del panel" "instalado" || no "SVG del panel" "falta el tema Rice"
+
+h "Panel"
+if pgrep -x plasmashell >/dev/null 2>&1; then yes "plasmashell" "corriendo"; else no "plasmashell" "no corre"; fi
+if grep -q "org.kde.plasma.icontasks" "$CFG/plasma-org.kde.plasma.desktop-appletsrc" 2>/dev/null; then
+  yes "panel" "con el layout del repo"
+else
+  alt "panel" "no parece el del repo — ./install.sh --solo-panel"
+fi
+
+echo
+if [ "$PROB" -eq 0 ]; then printf '%s  Todo en orden.%s\n' "$G$B" "$N"
+else printf '%s  %d cosas que revisar%s (las ✗)\n' "$Y$B" "$PROB" "$N"; fi
+printf '  %sLas ~ funcionan, solo que con un sustituto o sin configurar.%s\n' "$D" "$N"

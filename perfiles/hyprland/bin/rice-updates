@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Actualizaciones pendientes, sin importar la distro.  count · show · apply
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+have() { command -v "$1" >/dev/null 2>&1; }
+count() {
+  if   have checkupdates; then checkupdates 2>/dev/null | wc -l
+  elif have pacman;       then pacman -Qu 2>/dev/null | wc -l
+  elif have apt;          then apt list --upgradable 2>/dev/null | grep -c upgradable || true
+  elif have dnf;          then dnf -q check-update 2>/dev/null | grep -c '^[a-zA-Z0-9]' || true
+  elif have zypper;       then zypper -q lu 2>/dev/null | grep -c '^v ' || true
+  else echo 0; fi
+}
+case "${1:-count}" in
+  count) c=$(count); [ "${c:-0}" -gt 0 ] && echo "$c" || echo "" ;;
+  show)  exec "${TERMINAL:-kitty}" -e sh -c 'rice-updates list; printf "\nEnter para cerrar"; read _' ;;
+  list)
+    if   have checkupdates; then checkupdates
+    elif have apt;          then apt list --upgradable
+    elif have dnf;          then dnf check-update
+    else echo "sin gestor conocido"; fi ;;
+  apply)
+    if   have paru;   then paru -Syu
+    elif have yay;    then yay -Syu
+    elif have pacman; then sudo pacman -Syu
+    elif have apt;    then sudo apt update && sudo apt upgrade
+    elif have dnf;    then sudo dnf upgrade; fi ;;
+esac

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ============================================================
+#  rice-panel — el panel de Plasma, sin pelearse con la interfaz.
+#
+#    rice-panel            lo reconstruye con el diseño del repo
+#    rice-panel reset      lo devuelve al de fábrica de KDE
+#    rice-panel restore    recupera el que tenías antes de instalar
+#    rice-panel restart    solo reinicia plasmashell
+# ============================================================
+set -uo pipefail
+PATH="$HOME/.local/bin:$PATH"; export PATH
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+APPLETS="$CFG/plasma-org.kde.plasma.desktop-appletsrc"
+REPO="${RICE_REPO:-$HOME/rice-kde}"
+have() { command -v "$1" >/dev/null 2>&1; }
+
+restart() {
+  if have kquitapp6; then kquitapp6 plasmashell 2>/dev/null; sleep 2; (kstart plasmashell >/dev/null 2>&1 &)
+  elif have kquitapp5; then kquitapp5 plasmashell 2>/dev/null; sleep 2; (kstart5 plasmashell >/dev/null 2>&1 &)
+  else echo "no encuentro kquitapp6; cierra sesión y vuelve a entrar" >&2; return 1; fi
+  echo "plasmashell reiniciado"
+}
+
+evaluate() {
+  local js="$1"
+  if   have gdbus;  then gdbus call --session --dest org.kde.plasmashell --object-path /PlasmaShell --method org.kde.PlasmaShell.evaluateScript "$js"
+  elif have qdbus6; then qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$js"
+  elif have qdbus;  then qdbus  org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$js"
+  else echo "hace falta gdbus o qdbus" >&2; return 1; fi
+}
+
+case "${1:-build}" in
+  reset)
+    cp -a "$APPLETS" "$APPLETS.bak-$(date +%s)" 2>/dev/null || true
+    rm -f "$APPLETS"
+    echo "config del panel borrada. Plasma la regenera de fábrica al reiniciar."
+    restart ;;
+  restore)
+    LAST=$(ls -1d "$HOME"/.config-backup-*/.config/plasma-org.kde.plasma.desktop-appletsrc 2>/dev/null | sort | tail -1 || true)
+    [ -n "$LAST" ] || { echo "no encuentro ningún respaldo" >&2; exit 1; }
+    cp -a "$LAST" "$APPLETS" && echo "restaurado desde $LAST"
+    restart ;;
+  restart) restart ;;
+  build|*)
+    [ -f "$REPO/plasma/panel.js" ] || { echo "no encuentro $REPO/plasma/panel.js (usa RICE_REPO=ruta)" >&2; exit 1; }
+    pgrep -x plasmashell >/dev/null || { echo "plasmashell no está corriendo" >&2; exit 1; }
+    cp -a "$APPLETS" "$APPLETS.bak-$(date +%s)" 2>/dev/null || true
+    out=$(evaluate "$(cat "$REPO/plasma/panel.js")" 2>&1) || true
+    echo "${out:-(sin salida)}"
+    echo "Si quedó peor:  rice-panel restore   ·  de fábrica:  rice-panel reset" ;;
+esac

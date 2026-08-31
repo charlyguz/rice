@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Fondos de pantalla en Plasma.  menu · next · prev · random · set <img> · dir
+set -euo pipefail
+PATH="$HOME/.local/bin:$PATH"; export PATH
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}/rice"
+STATE="$CFG/current-wallpaper"
+mkdir -p "$CFG"
+have() { command -v "$1" >/dev/null 2>&1; }
+
+for d in "$HOME/Pictures/Wallpapers" "$HOME/Imágenes/Wallpapers" \
+         "${XDG_DATA_HOME:-$HOME/.local/share}/rice/wallpapers" \
+         "$HOME/Pictures" "$HOME/Imágenes"; do
+  [ -d "$d" ] && [ -n "$(find "$d" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -print -quit)" ] && { WDIR="$d"; break; }
+done
+WDIR="${WDIR:-$HOME/Pictures}"
+
+list() { find "$WDIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort; }
+
+apply() {
+  local img="$1"
+  [ -f "$img" ] || return 1
+  if have plasma-apply-wallpaperimage; then
+    plasma-apply-wallpaperimage "$img" >/dev/null 2>&1 || {
+      echo "plasma-apply-wallpaperimage falló; ¿está corriendo Plasma?" >&2; return 1; }
+  else
+    echo "esto necesita Plasma 6 (plasma-apply-wallpaperimage)" >&2; return 1
+  fi
+  echo "$img" > "$STATE"
+  # el mismo fondo en la pantalla de bloqueo
+  if have kwriteconfig6; then
+    kwriteconfig6 --file kscreenlockerrc --group Greeter --group Wallpaper \
+      --group org.kde.image --group General --key Image "$img" 2>/dev/null || true
+  fi
+}
+
+step() {
+  local -a all; mapfile -t all < <(list)
+  [ "${#all[@]}" -gt 0 ] || { echo "no hay imágenes en $WDIR" >&2; exit 1; }
+  local cur i=0 n=${#all[@]}
+  cur=$( [ -f "$STATE" ] && cat "$STATE" || echo "" )
+  for j in "${!all[@]}"; do [ "${all[$j]}" = "$cur" ] && i=$j; done
+  i=$(( (i + $1 + n) % n ))
+  apply "${all[$i]}"
+}
+
+case "${1:-menu}" in
+  set)     apply "${2:?falta la ruta}" ;;
+  next)    step 1 ;;
+  prev)    step -1 ;;
+  random)  apply "$(list | shuf -n1)" ;;
+  restore) [ -f "$STATE" ] && apply "$(cat "$STATE")" || apply "$(list | head -1)" ;;
+  dir)     echo "$WDIR" ;;
+  menu|*)
+    if have kdialog; then
+      sel=$(kdialog --getopenfilename "$WDIR" "*.jpg *.jpeg *.png *.webp|Imágenes" 2>/dev/null) || exit 0
+      [ -n "$sel" ] && apply "$sel"
+    else
+      sel=$(list | xargs -r -n1 basename | { command -v rofi >/dev/null && rofi -dmenu -i -p Fondo || fuzzel --dmenu; }) || exit 0
+      [ -n "$sel" ] && apply "$WDIR/$sel"
+    fi ;;
+esac

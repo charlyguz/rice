@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+cat <<'TXT'
+  Comandos de este escritorio (shell plano en ~/.local/bin)
+
+  rice-theme [nombre|list|toggle|menu|reload]   cambiar la paleta de color
+  rice-wallpaper menu|next|prev|random|set <img>
+  rice-panel [reset|restore|restart]            rehacer / arreglar el panel
+  rice-doctor                                   revisión: qué falta y qué no
+  rice-help                                     esto
+
+  Reaplicar la configuración de Plasma (si tocaste algo y quieres volver):
+      ~/rice-kde/plasma/apply-settings.sh
+      ~/rice-kde/plasma/shortcuts.sh
+      ~/rice-kde/install.sh --solo-panel
+
+  Atajos principales
+    Meta+Return / Meta+T   terminal (kitty)
+    Meta+E                 archivos (Dolphin)
+    Meta+W                 navegador
+    Meta+N                 editor
+    Meta+Space             KRunner (escribe y corre)
+    Meta                   lanzador de aplicaciones
+    Meta+Q                 cerrar ventana
+    Meta+F / Meta+D        pantalla completa / maximizar
+    Meta+1..4              escritorios
+    Meta+Shift+1..4        llevar la ventana al escritorio
+    Meta+Tab               vista general
+    Print                  captura de región
+    Meta+V                 portapapeles
+    Meta+L                 bloquear
+    Meta+Z                 cambiar tema
+    Meta+Shift+W           cambiar fondo
+
+  Shell:    zsh + powerlevel10k   ·   ~/.zshrc  y  ~/.p10k.zsh
+            (tus cosas van en ~/.zshrc.local, así no se pisan)
+            rehacer el prompt con el asistente:  p10k configure
+
+  Config:   ~/.config/kdeglobals  ~/.config/kwinrc  ~/.config/kitty
+  Tema:     ~/.local/share/plasma/desktoptheme/Rice
+  Paletas:  ~/.local/share/rice/palettes
+TXT

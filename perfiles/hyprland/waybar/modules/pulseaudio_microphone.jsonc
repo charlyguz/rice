@@ -1,0 +1,14 @@
+{
+  "pulseaudio#microphone": {
+    "format": "{format_source}",
+    "rotate": 0,
+    "format-source": "\udb80\udf6c",
+    "format-source-muted": "\uf131",
+    "on-click": "__BIN__/rice-audio",
+    "on-click-middle": "__BIN__/rice-volume mic-mute",
+    "on-scroll-up": "__BIN__/rice-volume mic-up",
+    "on-scroll-down": "__BIN__/rice-volume mic-down",
+    "tooltip-format": "{format_source} {source_desc} // {source_volume}%",
+    "scroll-step": 5
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "cpu": {
+    "on-click": "noctalia msg panel-toggle control-center sysmon",
+    "on-click-right": "alacritty -e btop",
+        "interval": 10,
+    "format": "󰍛  {usage}%",
+    "rotate": 0,
+    "format-alt": "{icon0}{icon1}{icon2}{icon3}",
+    "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+  }
+}

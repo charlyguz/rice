@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Menú de herramientas. Sale donde está el botón.
+  Los ids se conectan con "menu-actions" en config.jsonc.
+-->
+<interface>
+  <object class="GtkMenu" id="menu">
+
+    <child>
+      <object class="GtkMenuItem" id="wallpaper">
+        <property name="label">󰸉   Cambiar fondo</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="wallnext">
+        <property name="label">󰑐   Fondo aleatorio</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep1" />
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="clipboard">
+        <property name="label">󰅌   Portapapeles</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="shotregion">
+        <property name="label">󰹑   Captura de región</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="shotfull">
+        <property name="label">󰍹   Captura completa</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep2" />
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="theme">
+        <property name="label">󰏘   Claro / oscuro</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="nightlight">
+        <property name="label">󰖔   Luz nocturna</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="dnd">
+        <property name="label">󰂛   No molestar</property>
+      </object>
+    </child>
+
+    <child>
+      <object class="GtkSeparatorMenuItem" id="sep3" />
+    </child>
+
+    <child>
+      <object class="GtkMenuItem" id="settings">
+        <property name="label">󰒓   Ajustes</property>
+      </object>
+    </child>
+
+  </object>
+</interface>

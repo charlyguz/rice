@@ -1,0 +1,436 @@
+#!/usr/bin/env bash
+# ============================================================
+#  rice-theme — el motor de color, para las dos distros.
+#
+#  Una sola paleta (25 líneas de CLAVE=#hex) se traduce a todos
+#  los formatos que KDE y sus vecinos entienden:
+#    · Plasma: esquema .colors + color de acento  (si hay KDE)
+#    · Hyprland: colors.conf + colors.css de Waybar (si hay Hyprland)
+#    · GTK3 / GTK4  → Firefox y apps de GNOME
+#    · kitty · Konsole · alacritty · btop · micro · starship · fzf
+#
+#    rice-theme                 paleta actual
+#    rice-theme list            paletas disponibles
+#    rice-theme tokyonight      aplicar
+#    rice-theme toggle          claro <-> oscuro
+#    rice-theme menu            selector gráfico
+#    rice-theme reload          re-generar sin cambiar de paleta
+# ============================================================
+set -euo pipefail
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+PALDIR="$DATA/rice/palettes"
+STATE="$CFG/rice"
+CURRENT="$STATE/current-palette"
+SCHEMES="$DATA/color-schemes"
+mkdir -p "$STATE" "$SCHEMES"
+
+die() { echo "rice-theme: $*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+current_name() { [ -f "$CURRENT" ] && cat "$CURRENT" || echo tokyonight; }
+list_palettes() { find "$PALDIR" -maxdepth 1 -name '*.conf' ! -name '_*' -printf '%f\n' 2>/dev/null | sed 's/\.conf$//' | sort; }
+
+# "#rrggbb" -> "rrggbb"
+raw() { echo "${1#\#}"; }
+# "#rrggbb" -> "26,27,38"  (lo que quieren KDE y Konsole)
+dec() { local h; h=$(raw "$1"); printf '%d,%d,%d' "0x${h:0:2}" "0x${h:2:2}" "0x${h:4:2}"; }
+# mezcla dos colores al 50% — para los tonos intermedios de KDE
+mix() {
+  local a b; a=$(raw "$1"); b=$(raw "$2")
+  printf '#%02x%02x%02x' \
+    $(( (0x${a:0:2} + 0x${b:0:2}) / 2 )) \
+    $(( (0x${a:2:2} + 0x${b:2:2}) / 2 )) \
+    $(( (0x${a:4:2} + 0x${b:4:2}) / 2 ))
+}
+
+# kwriteconfig/kreadconfig de Plasma 6, con alternativa a la 5
+kw() { if have kwriteconfig6; then kwriteconfig6 "$@"; elif have kwriteconfig5; then kwriteconfig5 "$@"; fi; }
+kr() { if have kreadconfig6; then kreadconfig6 "$@" 2>/dev/null; elif have kreadconfig5; then kreadconfig5 "$@" 2>/dev/null; fi; }
+
+# ------------------------------------------------------------
+render() {
+  local pal="$1"
+  local file="$PALDIR/$pal.conf"
+  [ -f "$file" ] || die "no existe la paleta '$pal'. Prueba: rice-theme list"
+  set -a
+  # shellcheck disable=SC1090
+  . "$file"
+  set +a
+
+  local SCHEME="Rice${pal//[^a-zA-Z0-9]/}"
+  local HOVER; HOVER=$(mix "$BG_ALT" "$ACCENT")
+  local ALT;   ALT=$(mix "$BG" "$BG_ALT")
+
+  # ---------- 1) esquema de color de Plasma ----------
+  local block
+  block=$(cat <<EOF
+BackgroundAlternate=$(dec "$ALT")
+BackgroundNormal=$(dec "$BG_ALT")
+DecorationFocus=$(dec "$ACCENT")
+DecorationHover=$(dec "$HOVER")
+ForegroundActive=$(dec "$SECONDARY")
+ForegroundInactive=$(dec "$FG_DIM")
+ForegroundLink=$(dec "$ACCENT")
+ForegroundNegative=$(dec "$ERROR")
+ForegroundNeutral=$(dec "$WARN")
+ForegroundNormal=$(dec "$FG")
+ForegroundPositive=$(dec "$OK")
+ForegroundVisited=$(dec "$SECONDARY")
+EOF
+)
+  {
+    printf '[ColorEffects:Disabled]\nColor=%s\nColorAmount=0\nColorEffect=0\nContrastAmount=0.65\nContrastEffect=1\nIntensityAmount=0.1\nIntensityEffect=2\n\n' "$(dec "$FG_DIM")"
+    printf '[ColorEffects:Inactive]\nChangeSelectionColor=true\nColor=%s\nColorAmount=0.025\nColorEffect=2\nContrastAmount=0.1\nContrastEffect=2\nEnable=false\nIntensityAmount=0\nIntensityEffect=0\n\n' "$(dec "$FG_DIM")"
+    printf '[Colors:Button]\n%s\n\n' "$block"
+    printf '[Colors:Selection]\nBackgroundAlternate=%s\nBackgroundNormal=%s\nDecorationFocus=%s\nDecorationHover=%s\nForegroundActive=%s\nForegroundInactive=%s\nForegroundLink=%s\nForegroundNegative=%s\nForegroundNeutral=%s\nForegroundNormal=%s\nForegroundPositive=%s\nForegroundVisited=%s\n\n' \
+      "$(dec "$ACCENT")" "$(dec "$ACCENT")" "$(dec "$ACCENT")" "$(dec "$ACCENT")" \
+      "$(dec "$ACCENT_FG")" "$(dec "$ACCENT_FG")" "$(dec "$ACCENT_FG")" "$(dec "$ERROR")" \
+      "$(dec "$WARN")" "$(dec "$ACCENT_FG")" "$(dec "$OK")" "$(dec "$ACCENT_FG")"
+    printf '[Colors:Tooltip]\nBackgroundAlternate=%s\nBackgroundNormal=%s\n%s\n\n' \
+      "$(dec "$BG_ALT")" "$(dec "$SURFACE")" "$(echo "$block" | tail -n +3)"
+    printf '[Colors:View]\nBackgroundAlternate=%s\nBackgroundNormal=%s\n%s\n\n' \
+      "$(dec "$ALT")" "$(dec "$BG")" "$(echo "$block" | tail -n +3)"
+    printf '[Colors:Window]\n%s\n\n' "$block"
+    printf '[Colors:Complementary]\nBackgroundAlternate=%s\nBackgroundNormal=%s\n%s\n\n' \
+      "$(dec "$BG_ALT")" "$(dec "$BG")" "$(echo "$block" | tail -n +3)"
+    printf '[Colors:Header]\nBackgroundAlternate=%s\nBackgroundNormal=%s\n%s\n\n' \
+      "$(dec "$BG")" "$(dec "$BG_ALT")" "$(echo "$block" | tail -n +3)"
+    printf '[Colors:Header][Inactive]\nBackgroundAlternate=%s\nBackgroundNormal=%s\n%s\n\n' \
+      "$(dec "$BG_ALT")" "$(dec "$BG")" "$(echo "$block" | tail -n +3)"
+    printf '[General]\nColorScheme=%s\nName=%s\nshadeSortColumn=true\naccentActiveTitlebar=false\n\n' "$SCHEME" "$NAME"
+    printf '[KDE]\ncontrast=4\n\n'
+    printf '[WM]\nactiveBackground=%s\nactiveBlend=%s\nactiveForeground=%s\ninactiveBackground=%s\ninactiveBlend=%s\ninactiveForeground=%s\n' \
+      "$(dec "$BG_ALT")" "$(dec "$ACCENT")" "$(dec "$FG")" \
+      "$(dec "$BG")" "$(dec "$SURFACE")" "$(dec "$FG_DIM")"
+  } > "$SCHEMES/$SCHEME.colors"
+
+  # ---------- 2) aplicarlo + color de acento ----------
+  if have plasma-apply-colorscheme; then
+    plasma-apply-colorscheme "$SCHEME" >/dev/null 2>&1 || true
+  else
+    kw --file kdeglobals --group General --key ColorScheme "$SCHEME"
+  fi
+  kw --file kdeglobals --group General --key AccentColor "$(dec "$ACCENT")"
+  kw --file kdeglobals --group General --key accentColorFromWallpaper false
+  # Breeze en variante clara u oscura según la paleta
+  kw --file kdeglobals --group KDE --key widgetStyle Breeze
+  # El tema de escritorio es "Rice" (lo instala install.sh) y sus SVG toman
+  # los colores del esquema activo, así que no hay que cambiarlo al cambiar
+  # de paleta. Solo se pone si aún no hay ninguno.
+  if [ -z "$(kr --file plasmarc --group Theme --key name 2>/dev/null)" ]; then
+    kw --file plasmarc --group Theme --key name Rice
+  fi
+
+  # ---------- 3) GTK (Firefox y apps GNOME dentro de Plasma) ----------
+  cat > "$STATE/colors.css" <<EOF
+/* Generado por rice-theme — paleta: $NAME. No editar: se sobrescribe. */
+@define-color accent_color $ACCENT;
+@define-color accent_bg_color $ACCENT;
+@define-color accent_fg_color $ACCENT_FG;
+@define-color destructive_bg_color $ERROR;
+@define-color destructive_fg_color $ERROR_FG;
+@define-color error_bg_color $ERROR;
+@define-color error_fg_color $ERROR_FG;
+@define-color success_bg_color $OK;
+@define-color success_fg_color $ACCENT_FG;
+@define-color warning_bg_color $WARN;
+@define-color warning_fg_color $ACCENT_FG;
+@define-color window_bg_color $BG;
+@define-color window_fg_color $FG;
+@define-color view_bg_color $BG;
+@define-color view_fg_color $FG;
+@define-color headerbar_bg_color $BG_ALT;
+@define-color headerbar_fg_color $FG;
+@define-color headerbar_backdrop_color @window_bg_color;
+@define-color popover_bg_color $BG_ALT;
+@define-color popover_fg_color $FG;
+@define-color card_bg_color $BG_ALT;
+@define-color card_fg_color $FG;
+@define-color dialog_bg_color $BG;
+@define-color dialog_fg_color $FG;
+@define-color sidebar_bg_color $BG_ALT;
+@define-color sidebar_fg_color $FG;
+@define-color theme_selected_bg_color @accent_bg_color;
+@define-color theme_selected_fg_color @accent_fg_color;
+EOF
+  for d in gtk-3.0 gtk-4.0; do
+    [ -d "$CFG/$d" ] && cp -f "$STATE/colors.css" "$CFG/$d/colors.css"
+  done
+  if have gsettings; then
+    gsettings set org.gnome.desktop.interface color-scheme \
+      "$([ "$MODE" = light ] && echo prefer-light || echo prefer-dark)" 2>/dev/null || true
+  fi
+
+  # ---------- 4) kitty ----------
+  if [ -d "$CFG/kitty" ]; then
+    cat > "$CFG/kitty/theme.conf" <<EOF
+# Generado por rice-theme — paleta: $NAME
+background            $BG
+foreground            $FG
+cursor                $FG
+cursor_text_color     $BG
+selection_background  $BG_ALT
+selection_foreground  $FG
+url_color             $ACCENT
+active_border_color   $ACCENT
+inactive_border_color $SURFACE
+active_tab_background   $ACCENT
+active_tab_foreground   $ACCENT_FG
+inactive_tab_background $BG_ALT
+inactive_tab_foreground $FG_DIM
+cursor_trail_color      $ACCENT
+color0  $C0
+color1  $C1
+color2  $C2
+color3  $C3
+color4  $C4
+color5  $C5
+color6  $C6
+color7  $C7
+color8  $C8
+color9  $C9
+color10 $C10
+color11 $C11
+color12 $C12
+color13 $C13
+color14 $C14
+color15 $C15
+EOF
+  fi
+
+  # ---------- 5) Konsole (el terminal de KDE, por si lo abres) ----------
+  mkdir -p "$DATA/konsole"
+  cat > "$DATA/konsole/Rice.colorscheme" <<EOF
+[General]
+Blur=true
+ColorRandomization=false
+Description=Rice — $NAME
+Opacity=0.9
+Wallpaper=
+
+[Background]
+Color=$(dec "$BG")
+[BackgroundFaint]
+Color=$(dec "$BG")
+[BackgroundIntense]
+Color=$(dec "$SURFACE")
+[Foreground]
+Color=$(dec "$FG")
+[ForegroundFaint]
+Color=$(dec "$FG_DIM")
+[ForegroundIntense]
+Color=$(dec "$FG")
+[Color0]
+Color=$(dec "$C0")
+[Color0Intense]
+Color=$(dec "$C8")
+[Color1]
+Color=$(dec "$C1")
+[Color1Intense]
+Color=$(dec "$C9")
+[Color2]
+Color=$(dec "$C2")
+[Color2Intense]
+Color=$(dec "$C10")
+[Color3]
+Color=$(dec "$C3")
+[Color3Intense]
+Color=$(dec "$C11")
+[Color4]
+Color=$(dec "$C4")
+[Color4Intense]
+Color=$(dec "$C12")
+[Color5]
+Color=$(dec "$C5")
+[Color5Intense]
+Color=$(dec "$C13")
+[Color6]
+Color=$(dec "$C6")
+[Color6Intense]
+Color=$(dec "$C14")
+[Color7]
+Color=$(dec "$C7")
+[Color7Intense]
+Color=$(dec "$C15")
+EOF
+
+  # ---------- 6) btop ----------
+  if [ -d "$CFG/btop" ]; then
+    mkdir -p "$CFG/btop/themes"
+    cat > "$CFG/btop/themes/rice.theme" <<EOF
+# Generado por rice-theme — paleta: $NAME
+theme[main_bg]="$BG"
+theme[main_fg]="$FG"
+theme[title]="$FG"
+theme[hi_fg]="$ACCENT"
+theme[selected_bg]="$BG_ALT"
+theme[selected_fg]="$ACCENT"
+theme[inactive_fg]="$FG_DIM"
+theme[graph_text]="$FG_DIM"
+theme[meter_bg]="$SURFACE"
+theme[proc_misc]="$SECONDARY"
+theme[cpu_box]="$ACCENT"
+theme[mem_box]="$OK"
+theme[net_box]="$SECONDARY"
+theme[proc_box]="$WARN"
+theme[div_line]="$SURFACE"
+theme[temp_start]="$OK"
+theme[temp_mid]="$WARN"
+theme[temp_end]="$ERROR"
+theme[cpu_start]="$OK"
+theme[cpu_mid]="$WARN"
+theme[cpu_end]="$ERROR"
+theme[free_start]="$SECONDARY"
+theme[free_mid]="$ACCENT"
+theme[free_end]="$OK"
+theme[cached_start]="$ACCENT"
+theme[cached_mid]="$SECONDARY"
+theme[cached_end]="$SECONDARY"
+theme[available_start]="$WARN"
+theme[available_mid]="$WARN"
+theme[available_end]="$OK"
+theme[used_start]="$OK"
+theme[used_mid]="$WARN"
+theme[used_end]="$ERROR"
+theme[download_start]="$ACCENT"
+theme[download_mid]="$SECONDARY"
+theme[download_end]="$OK"
+theme[upload_start]="$WARN"
+theme[upload_mid]="$SECONDARY"
+theme[upload_end]="$ERROR"
+theme[process_start]="$ACCENT"
+theme[process_mid]="$SECONDARY"
+theme[process_end]="$ERROR"
+EOF
+  fi
+
+  # ---------- 7) Hyprland y Waybar (si este equipo los usa) ----------
+  if [ -d "$CFG/hypr" ]; then
+    cat > "$CFG/hypr/colors.conf" <<EOF
+# Generado por rice-theme — paleta: $NAME
+\$accent    = rgb($(raw "$ACCENT"))
+\$secondary = rgb($(raw "$SECONDARY"))
+\$surface   = rgb($(raw "$SURFACE"))
+\$bg        = rgb($(raw "$BG"))
+\$bg_alt    = rgb($(raw "$BG_ALT"))
+\$fg        = rgb($(raw "$FG"))
+\$error     = rgb($(raw "$ERROR"))
+EOF
+  fi
+  [ -d "$CFG/waybar" ] && cp -f "$STATE/colors.css" "$CFG/waybar/colors.css"
+
+  # ---------- 8) micro (tu editor de terminal) ----------
+  if [ -d "$CFG/micro" ]; then
+    # micro trae los temas de Catppuccin; se elige el que pega con la paleta
+    local mtema=catppuccin-macchiato
+    case "$pal" in
+      catppuccin-mocha) mtema=catppuccin-mocha ;;
+      catppuccin-latte|tokyonight-day) mtema=catppuccin-latte ;;
+      gruvbox-dark)     mtema=simple ;;
+    esac
+    if have python3; then
+      python3 - "$CFG/micro/settings.json" "$mtema" <<'PYEOF'
+import json,sys
+p,t=sys.argv[1],sys.argv[2]
+try: d=json.load(open(p))
+except Exception: d={}
+d["colorscheme"]=t
+json.dump(d,open(p,"w"),indent=4)
+PYEOF
+    fi
+  fi
+
+  # ---------- 9) starship ----------
+  if [ -f "$CFG/starship.toml" ] || [ -d "$CFG" ]; then
+    cat > "$STATE/starship-palette.toml" <<EOF
+# Generado por rice-theme — paleta: $NAME
+palette = "rice"
+[palettes.rice]
+blue = "$ACCENT"
+red = "$ERROR"
+green = "$OK"
+yellow = "$WARN"
+cyan = "$C6"
+magenta = "$SECONDARY"
+white = "$FG_DIM"
+black = "$C0"
+text = "$FG"
+surface = "$BG"
+EOF
+  fi
+
+  # ---------- 10) alacritty ----------
+  if [ -d "$CFG/alacritty" ]; then
+    mkdir -p "$CFG/alacritty/themes"
+    cat > "$CFG/alacritty/themes/rice.toml" <<EOF
+# Generado por rice-theme — paleta: $NAME
+[colors.primary]
+background = "$BG"
+foreground = "$FG"
+[colors.normal]
+black   = "$C0"
+red     = "$C1"
+green   = "$C2"
+yellow  = "$C3"
+blue    = "$C4"
+magenta = "$C5"
+cyan    = "$C6"
+white   = "$C7"
+[colors.bright]
+black   = "$C8"
+red     = "$C9"
+green   = "$C10"
+yellow  = "$C11"
+blue    = "$C12"
+magenta = "$C13"
+cyan    = "$C14"
+white   = "$C15"
+EOF
+  fi
+
+  echo "$pal" > "$CURRENT"
+}
+
+reload_apps() {
+  pkill -SIGUSR1 kitty 2>/dev/null || true
+  pkill -SIGUSR2 waybar 2>/dev/null || true
+  have hyprctl && hyprctl reload >/dev/null 2>&1 || true
+  # que Plasma relea kdeglobals sin reiniciar la sesión
+  if have qdbus6; then qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+  elif have qdbus;  then qdbus  org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+  elif have gdbus;  then gdbus call --session --dest org.kde.KWin --object-path /KWin --method org.kde.KWin.reconfigure >/dev/null 2>&1 || true
+  fi
+  have plasma-apply-desktoptheme >/dev/null 2>&1 || true
+}
+
+notify() { have notify-send && notify-send -a rice "$@" || true; }
+
+paired() {
+  local cur="$1"
+  local f="$PALDIR/_pairs.conf"
+  [ -f "$f" ] && grep "^$cur=" "$f" | head -1 | cut -d= -f2 || true
+}
+
+menu() {
+  if   have kdialog; then list_palettes | tr '\n' ' ' | xargs -r kdialog --menu "Tema" 2>/dev/null | head -1
+  elif have rofi;    then list_palettes | rofi -dmenu -i -p Tema
+  elif have fuzzel;  then list_palettes | fuzzel --dmenu
+  else list_palettes; fi
+}
+
+case "${1:-status}" in
+  status) echo "Paleta actual: $(current_name)" ;;
+  list)   list_palettes ;;
+  reload) render "$(current_name)"; reload_apps ;;
+  toggle)
+      cur=$(current_name); next=$(paired "$cur")
+      [ -n "$next" ] || die "la paleta '$cur' no tiene pareja clara/oscura"
+      render "$next"; reload_apps; notify "Tema" "$next" ;;
+  menu)
+      sel=$(menu) || exit 0
+      [ -n "$sel" ] || exit 0
+      render "$sel"; reload_apps; notify "Tema" "$sel" ;;
+  *)  render "$1"; reload_apps; notify "Tema" "$1" ;;
+esac

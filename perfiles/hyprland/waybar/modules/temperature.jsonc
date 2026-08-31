@@ -1,0 +1,24 @@
+/*
+ * Temperatura. El original de HyDE venía apuntando a las zonas
+ * térmicas de la laptop de su autor (zonas 2, 27 y 0) y en tu
+ * equipo daría datos falsos o vacíos.
+ *
+ * install.sh detecta la zona buena de esta máquina y la escribe aquí
+ * (prefiere x86_pkg_temp / k10temp / coretemp, si no acpitz).
+ *
+ * Para verlas todas:
+ *     for f in /sys/class/thermal/thermal_zone*'/'type; do echo "$f $(cat $f)"; done
+ */
+{
+  "temperature": {
+    "on-click": "__BIN__/rice-sysmon",
+    "on-click-right": "__BIN__/rice-sysmon",
+    "thermal-zone": __TZONE__,
+    "critical-threshold": 90,
+    "warning-threshold": 75,
+    "interval": 5,
+    "format": "󰔏  {temperatureC}°C",
+    "tooltip": true,
+    "tooltip-format": "Temperatura del sistema: {temperatureC}°C\nzona térmica __TZONE__"
+  }
+}

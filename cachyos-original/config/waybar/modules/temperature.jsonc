@@ -1,0 +1,24 @@
+/*
+ * Temperatura. El original de HyDE venía apuntando a las zonas
+ * térmicas de la laptop de su autor (zonas 2, 27 y 0) y en tu
+ * equipo daría datos falsos o vacíos.
+ *
+ * Tu máquina solo expone una zona:
+ *     /sys/class/thermal/thermal_zone0  ->  acpitz
+ *
+ * Para volver a listarlas si cambias de hardware:
+ *     for f in /sys/class/thermal/thermal_zone*'/'type; do cat $f; done
+ */
+{
+  "temperature": {
+    "on-click": "noctalia msg panel-toggle control-center sysmon",
+    "on-click-right": "alacritty -e btop",
+        "thermal-zone": 0,
+    "critical-threshold": 90,
+    "warning-threshold": 75,
+    "interval": 5,
+    "format": "󰔏  {temperatureC}°C",
+    "tooltip": true,
+    "tooltip-format": "Temperatura del sistema: {temperatureC}°C\nacpitz (thermal_zone0)"
+  }
+}

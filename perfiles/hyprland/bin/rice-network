@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Red.  (sin arg) abre el gestor · toggle enciende/apaga el wifi
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+have() { command -v "$1" >/dev/null 2>&1; }
+case "${1:-open}" in
+  toggle)
+    if [ "$(nmcli radio wifi)" = enabled ]; then nmcli radio wifi off; notify-send -a rice "WiFi" "Apagado"
+    else nmcli radio wifi on; notify-send -a rice "WiFi" "Encendido"; fi ;;
+  *)
+    if have nm-connection-editor; then exec nm-connection-editor
+    elif have iwgtk; then exec iwgtk
+    else exec "${TERMINAL:-kitty}" -e nmtui; fi ;;
+esac

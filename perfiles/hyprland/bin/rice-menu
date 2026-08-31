@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Selector genérico. Lee opciones por stdin, imprime la elegida.
+# Qué programa usa lo decide ~/.config/rice/menu (lo pone install.sh):
+#   rofi    -> nativo Wayland en Arch (rofi-wayland)
+#   fuzzel  -> nativo Wayland en Debian/Fedora
+# Si ese archivo no existe, prueba en orden: rofi, fuzzel, wofi, bemenu.
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+prompt="${1:-}"
+shift || true
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+pref="${RICE_MENU:-$( [ -f "$CFG/rice/menu" ] && cat "$CFG/rice/menu" || echo "" )}"
+
+run_rofi()   { exec rofi -dmenu -i -p "$prompt" "$@"; }
+run_fuzzel() { exec fuzzel --dmenu --prompt "$prompt❯ " "$@"; }
+run_wofi()   { exec wofi --dmenu -i -p "$prompt" "$@"; }
+run_bemenu() { exec bemenu -i -p "$prompt" "$@"; }
+
+if [ -n "$pref" ] && command -v "$pref" >/dev/null 2>&1; then "run_$pref" "$@"; fi
+for m in rofi fuzzel wofi bemenu; do
+  command -v "$m" >/dev/null 2>&1 && "run_$m" "$@"
+done
+echo "rice-menu: instala rofi, fuzzel, wofi o bemenu" >&2; exit 1

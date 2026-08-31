@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Brillo de pantalla.  up · down · set <n%>
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+STEP="${RICE_BRI_STEP:-5}"
+have() { command -v "$1" >/dev/null 2>&1; }
+case "${1:?up|down|set}" in
+  up)
+    have swayosd-client && { swayosd-client --brightness raise; exit; }
+    have brightnessctl && brightnessctl set "${STEP}%+" -q || light -A "$STEP" ;;
+  down)
+    have swayosd-client && { swayosd-client --brightness lower; exit; }
+    have brightnessctl && brightnessctl set "${STEP}%-" -q || light -U "$STEP" ;;
+  set)
+    have brightnessctl && brightnessctl set "${2:?}" -q || light -S "${2%\%}" ;;
+esac

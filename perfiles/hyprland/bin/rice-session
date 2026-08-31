@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Menú de sesión y bloqueo.  (sin arg) menú · lock · logout · reboot · shutdown · suspend
+set -euo pipefail
+# RICE_PATH_FIX: Hyprland lanza con /bin/sh, que no lee ningún perfil.
+# Sin esto, un script no encontraría a los otros al arrancar la sesión.
+PATH="$HOME/.local/bin:$PATH"; export PATH
+
+have() { command -v "$1" >/dev/null 2>&1; }
+
+do_lock() {
+  if   have hyprlock; then hyprlock
+  elif have swaylock; then swaylock -f
+  else notify-send -a rice "Sesión" "Instala hyprlock"; fi
+}
+do_logout() {
+  if   have uwsm && uwsm check may-start >/dev/null 2>&1; then uwsm stop
+  elif have hyprctl; then hyprctl dispatch exit
+  else loginctl terminate-user "$USER"; fi
+}
+
+case "${1:-menu}" in
+  lock)     do_lock ;;
+  logout)   do_logout ;;
+  reboot)   systemctl reboot ;;
+  shutdown) systemctl poweroff ;;
+  suspend)  do_lock & sleep 1; systemctl suspend ;;
+  menu|*)
+    if have wlogout; then exec wlogout -b 5 -T 400 -B 400; fi
+    sel=$(printf '%s\n' "  Bloquear" "  Cerrar sesión" "  Suspender" "  Reiniciar" "  Apagar" | rice-menu "Sesión") || exit 0
+    case "$sel" in
+      *Bloquear*)  do_lock ;;
+      *Cerrar*)    do_logout ;;
+      *Suspender*) do_lock & sleep 1; systemctl suspend ;;
+      *Reiniciar*) systemctl reboot ;;
+      *Apagar*)    systemctl poweroff ;;
+    esac ;;
+esac

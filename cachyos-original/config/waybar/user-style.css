@@ -1,0 +1,199 @@
+/* ============================================================
+ *  TUS overrides. Se carga AL FINAL, gana sobre el CSS de HyDE.
+ *  Recarga en caliente:   killall -SIGUSR2 waybar
+ * ============================================================ */
+
+/* ------------------------------------------------------------
+ *  ISLAS: transparencia + borde
+ *
+ *  alpha(@color, 0.55) = 55% opaco. Baja el número para ver más
+ *  el fondo de pantalla, súbelo para que se lea mejor el texto.
+ * ------------------------------------------------------------ */
+window#waybar.top #pill {
+    background-color: alpha(@main-bg, 0.55);
+    /* Grosor del borde. 1px = fino, 3px = marcado */
+    border: 2px solid alpha(@wb-act-bg, 0.45);
+    border-radius: 16px;
+    padding: 0em 0.9em;
+    margin: 0.4em 0.4em;
+
+    /* BORDE TIPO TIRA LED: un tramo brillante recorre el contorno.
+     * Sube los 4s para hacerlo más lento, bájalos para más rápido.
+     * Para apagarlo, comenta esta línea.
+     * Para volver al parpadeo suave: borde_respira 5s ease-in-out infinite */
+    animation: borde_led 4s linear infinite;
+}
+
+/* TIRA LED
+ * GTK3 no tiene conic-gradient, así que el recorrido se simula
+ * encendiendo cada lado del borde por turnos. Con las esquinas
+ * redondeadas el salto entre lados casi no se nota.
+ *
+ *   alpha 0.95 = el tramo encendido   ·   alpha 0.18 = el resto
+ * Sube el 0.18 si quieres que el contorno apagado se vea más. */
+@keyframes borde_led {
+    0% {
+        border-top-color:    alpha(@wb-act-bg, 0.95);
+        border-right-color:  alpha(@wb-act-bg, 0.18);
+        border-bottom-color: alpha(@wb-act-bg, 0.18);
+        border-left-color:   alpha(@wb-act-bg, 0.55);
+    }
+    25% {
+        border-top-color:    alpha(@wb-act-bg, 0.55);
+        border-right-color:  alpha(@wb-act-bg, 0.95);
+        border-bottom-color: alpha(@wb-act-bg, 0.18);
+        border-left-color:   alpha(@wb-act-bg, 0.18);
+    }
+    50% {
+        border-top-color:    alpha(@wb-act-bg, 0.18);
+        border-right-color:  alpha(@wb-act-bg, 0.55);
+        border-bottom-color: alpha(@wb-act-bg, 0.95);
+        border-left-color:   alpha(@wb-act-bg, 0.18);
+    }
+    75% {
+        border-top-color:    alpha(@wb-act-bg, 0.18);
+        border-right-color:  alpha(@wb-act-bg, 0.18);
+        border-bottom-color: alpha(@wb-act-bg, 0.55);
+        border-left-color:   alpha(@wb-act-bg, 0.95);
+    }
+    100% {
+        border-top-color:    alpha(@wb-act-bg, 0.95);
+        border-right-color:  alpha(@wb-act-bg, 0.18);
+        border-bottom-color: alpha(@wb-act-bg, 0.18);
+        border-left-color:   alpha(@wb-act-bg, 0.55);
+    }
+}
+
+/* La versión anterior, por si prefieres volver a ella */
+@keyframes borde_respira {
+    0%   { border-color: alpha(@wb-act-bg, 0.30); }
+    50%  { border-color: alpha(@wb-act-bg, 0.85); }
+    100% { border-color: alpha(@wb-act-bg, 0.30); }
+}
+
+/* Al pasar el mouse la isla se aclara y el borde se fija brillante */
+window#waybar.top #pill:hover {
+    background-color: alpha(@main-bg, 0.75);
+    border-color: @wb-act-bg;
+    animation: none;
+}
+
+/* ------------------------------------------------------------
+ *  Espaciado entre módulos dentro de una isla
+ * ------------------------------------------------------------ */
+#cpu,
+#memory,
+#temperature,
+#custom-updates,
+#backlight,
+#pulseaudio,
+#pulseaudio.microphone,
+#network,
+#battery,
+#clock,
+#mpris,
+#idle_inhibitor {
+    padding: 0 0.5em;
+}
+
+/* ------------------------------------------------------------
+ *  Workspaces: el activo como pastilla de acento
+ * ------------------------------------------------------------ */
+#workspaces button {
+    padding: 0 0.55em;
+    margin: 0.28em 0.12em;
+    border-radius: 10px;
+    color: @main-fg;
+}
+
+#workspaces button.active {
+    background: @wb-act-bg;
+    color: @wb-act-fg;
+    padding: 0 1.1em;
+}
+
+#workspaces button:hover {
+    background: alpha(@wb-act-bg, 0.35);
+    color: @main-fg;
+}
+
+/* ------------------------------------------------------------
+ *  Botones de herramienta
+ * ------------------------------------------------------------ */
+#custom-wallpaper,
+#custom-theme,
+#custom-clipboard,
+#custom-screenshot,
+#custom-settings {
+    padding: 0 0.45em;
+    font-size: 15px;
+    color: @main-fg;
+}
+
+#custom-wallpaper:hover,
+#custom-theme:hover,
+#custom-clipboard:hover,
+#custom-screenshot:hover,
+#custom-settings:hover,
+#custom-logo:hover,
+#custom-power:hover {
+    background: @wb-act-bg;
+    color: @wb-act-fg;
+    border-radius: 9px;
+}
+
+#custom-logo {
+    color: @wb-act-bg;
+    font-size: 17px;
+    padding: 0 0.5em;
+}
+
+#custom-power {
+    color: @error_bg_color;
+    font-size: 15px;
+    padding: 0 0.45em;
+}
+
+#clock {
+    color: @wb-act-bg;
+    font-weight: 700;
+}
+
+/* Estados de alerta */
+#battery.critical:not(.charging),
+#temperature.critical,
+#network.disconnected,
+#pulseaudio.muted {
+    color: @error_bg_color;
+}
+
+/* Tooltips a juego */
+tooltip {
+    background: alpha(@main-bg, 0.95);
+    border: 1px solid alpha(@wb-act-bg, 0.4);
+    border-radius: 12px;
+}
+
+/* ------------------------------------------------------------
+ *  RECETAS — descomenta la que quieras probar
+ * ------------------------------------------------------------ */
+
+/* Islas casi invisibles, solo el borde:
+window#waybar.top #pill { background-color: alpha(@main-bg, 0.2); }
+*/
+
+/* Islas sólidas (sin transparencia):
+window#waybar.top #pill { background-color: @main-bg; }
+*/
+
+/* Borde más grueso y marcado:
+window#waybar.top #pill { border: 2px solid @wb-act-bg; }
+*/
+
+/* Cápsulas totalmente redondas:
+window#waybar.top #pill { border-radius: 22px; }
+*/
+
+/* Sin borde:
+window#waybar.top #pill { border: none; }
+*/

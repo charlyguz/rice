@@ -1,0 +1,14 @@
+configuration {
+    modes: "drun,run,window,filebrowser";
+    font: "Outfit 12";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    drun-display-format: "{name}";
+    display-drun: " Apps";
+    display-run:  " Correr";
+    display-window: " Ventanas";
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+}
+@theme "rice"

@@ -1,0 +1,11 @@
+{
+  "cpu": {
+    "on-click": "__BIN__/rice-sysmon",
+    "on-click-right": "__BIN__/rice-sysmon",
+        "interval": 10,
+    "format": "󰍛  {usage}%",
+    "rotate": 0,
+    "format-alt": "{icon0}{icon1}{icon2}{icon3}",
+    "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+  }
+}

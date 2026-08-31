@@ -1,0 +1,28 @@
+// Lo que sale al abrir el terminal. Los colores los toma del tema de kitty,
+// así que sigue tu paleta sin configurar nada aparte.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": { "type": "small", "padding": { "top": 1, "right": 3 } },
+  "display": { "separator": "  " },
+  "modules": [
+    "break",
+    { "type": "title", "keyWidth": 10 },
+    "break",
+    { "type": "os",        "key": "  distro", "keyColor": "blue" },
+    { "type": "kernel",    "key": "  kernel", "keyColor": "blue" },
+    { "type": "wm",        "key": "  wm",     "keyColor": "magenta" },
+    { "type": "terminal",  "key": "  term",   "keyColor": "magenta" },
+    { "type": "shell",     "key": "  shell",  "keyColor": "magenta" },
+    "break",
+    { "type": "cpu",       "key": "  cpu",    "keyColor": "green" },
+    { "type": "gpu",       "key": "  gpu",    "keyColor": "green" },
+    { "type": "memory",    "key": "  ram",    "keyColor": "green" },
+    { "type": "disk",      "key": "  disk",   "keyColor": "green" },
+    "break",
+    { "type": "uptime",    "key": "  up",     "keyColor": "yellow" },
+    { "type": "packages",  "key": "  pkgs",   "keyColor": "yellow" },
+    "break",
+    { "type": "colors", "paddingLeft": 2, "symbol": "circle" },
+    "break"
+  ]
+}
