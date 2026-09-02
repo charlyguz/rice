@@ -1,9 +1,37 @@
+# ============================================================
+#  .gitconfig
+#  Ojo: aquí NO va [user]. Si se pusiera, quien instalara este
+#  repo haría sus commits firmados con el correo de otra persona.
+#  El instalador te pregunta tu nombre y correo la primera vez.
+# ============================================================
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[push]
+	autoSetupRemote = true
+[core]
+	editor = micro
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
+	syntax-theme = Coldark-Dark
+[merge]
+	conflictStyle = zdiff3
+[diff]
+	colorMoved = default
 [credential "https://github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
+	helper =
+	helper = !gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
-[user]
-	email = guzmancarl5610@gmail.com
-	name = charly
+	helper =
+	helper = !gh auth git-credential
+[alias]
+	s = status -sb
+	l = log --oneline --graph --decorate -20
+	d = diff
+	co = checkout
+	br = branch

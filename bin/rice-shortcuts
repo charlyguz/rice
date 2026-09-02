@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# ============================================================
+#  rice-shortcuts — aplica los atajos hablando con KDE por D-Bus.
+#
+#  Por qué existe: escribir kglobalshortcutsrc con kwriteconfig NO
+#  basta. KDE (kglobalacceld, o KWin en Wayland) mantiene su propio
+#  registro en memoria y reescribe ese fichero al salir, machacando
+#  lo que se puso a mano. Además rechaza en silencio las teclas que
+#  ya tiene otro, y deja la entrada vacía.
+#
+#  Aquí se libera primero al ocupante y luego se asigna, que es lo
+#  que hace el panel de Preferencias por dentro.
+# ============================================================
+set -uo pipefail
+DEST=(--session --dest org.kde.kglobalaccel)
+M=268435456; S=33554432; C=67108864; ALT=134217728
+
+have() { command -v "$1" >/dev/null 2>&1; }
+have gdbus || { echo "hace falta gdbus" >&2; exit 1; }
+gdbus call "${DEST[@]}" --object-path /kglobalaccel \
+  --method org.kde.KGlobalAccel.allComponents >/dev/null 2>&1 || {
+  echo "KDE no responde: corre esto dentro de tu sesión de Plasma" >&2; exit 1; }
+
+obj() { echo "/component/$(echo "$1" | tr '.-' '__')"; }
+
+teclas() { gdbus call "${DEST[@]}" --object-path "$(obj "$1")" \
+    --method org.kde.kglobalaccel.Component.allShortcutInfos 2>/dev/null \
+  | tr ')' '\n' | grep -F "'$2'," | grep -oE '\[[0-9, ]*\]' | head -1 | tr -d '[] '; }
+
+amistoso() { gdbus call "${DEST[@]}" --object-path "$(obj "$1")" \
+    --method org.kde.kglobalaccel.Component.allShortcutInfos 2>/dev/null \
+  | tr ')' '\n' | grep -F "'$2'," | head -1 \
+  | sed -E "s/.*'$2', '([^']*)', '[^']*', '([^']*)'.*/\1|\2/"; }
+
+# libera una tecla quitándosela a quien la tenga
+liberar() {
+  local key="$1" info
+  info=$(gdbus call "${DEST[@]}" --object-path /kglobalaccel \
+    --method org.kde.KGlobalAccel.getGlobalShortcutsByKey "$key" 2>/dev/null \
+    | grep -oE "\('[^']+', '[^']+', '[^']+', '[^']+'" | head -1 | tr -d '(' | sed "s/', '/|/g;s/'//g")
+  [ -z "$info" ] && return 0
+  local a="${info%%|*}" r="${info#*|}" af="${r%%|*}" r2="${r#*|}" cu="${r2%%|*}" cf="${r2##*|}"
+  gdbus call "${DEST[@]}" --object-path /kglobalaccel --method org.kde.KGlobalAccel.setShortcutKeys \
+    "['$cu','$a','$cf','$af']" "@a(ai) []" 4 >/dev/null 2>&1
+  echo "    (liberada de: $cf / $af)"
+}
+
+# poner <componente> <accion> <keycode> [keycode2...]
+poner() {
+  local cu="$1" ac="$2"; shift 2
+  local fr af cf seq=""
+  fr=$(amistoso "$cu" "$ac")
+  [ -z "$fr" ] && { printf '  %-24s %-20s (KDE no expone esa acción)\n' "$cu" "$ac"; return 1; }
+  af="${fr%%|*}"; cf="${fr##*|}"
+  for k in "$@"; do
+    [ "$(gdbus call "${DEST[@]}" --object-path /kglobalaccel \
+        --method org.kde.KGlobalAccel.isGlobalShortcutAvailable "$k" '' 2>/dev/null)" = "(false,)" ] && liberar "$k"
+    seq="$seq([$k, 0, 0, 0],), "
+  done
+  gdbus call "${DEST[@]}" --object-path /kglobalaccel --method org.kde.KGlobalAccel.setShortcutKeys \
+    "['$cu','$ac','$cf','$af']" "[${seq%, }]" 6 >/dev/null 2>&1
+  local got; got=$(teclas "$cu" "$ac")
+  if [ "${got%%,*}" = "$1" ]; then printf '  ✓ %-22s %s\n' "$af" "$got"
+  else printf '  ✗ %-22s quedó=%s\n' "$af" "${got:-vacío}"; fi
+}
+
+echo "▸ Lanzar aplicaciones"
+poner rice-terminal.desktop  _launch $((M+16777220)) $((M+84))   # Meta+Return y Meta+T
+poner rice-archivos.desktop  _launch $((M+69))                   # Meta+E
+poner rice-navegador.desktop _launch $((M+87))                   # Meta+W
+poner rice-editor.desktop    _launch $((M+78))                   # Meta+N
+poner rice-calc.desktop      _launch $((M+67))                   # Meta+C
+poner rice-tema.desktop      _launch $((M+90))                   # Meta+Z
+poner rice-fondo.desktop     _launch $((M+S+87))                 # Meta+Shift+W
+poner rice-monitor.desktop   _launch $((C+S+16777216))           # Ctrl+Shift+Esc
+poner rice-buscador.desktop  _launch $((M+32))                   # Meta+Space (rofi)
+poner rice-notas.desktop     _launch $((M+S+66))                 # Meta+Shift+B (notas)
+
+echo "▸ Ventanas"
+poner kwin "Window Close"      $((M+81))   # Meta+Q
+poner kwin "Window Maximize"   $((M+68))   # Meta+D
+poner kwin "Window Fullscreen" $((M+70))   # Meta+F
+poner kwin "Window Minimize"   $((M+72))   # Meta+H
+
+echo "▸ Sistema"
+poner krunner _launch                  $((M+32))   # Meta+Space
+# El portapapeles: en Plasma 6 Klipper vive DENTRO de plasmashell. El
+# componente "klipper" sigue existiendo en kglobalshortcutsrc pero ya no
+# lo respalda ningún proceso: si le asignas la tecla, kglobalaccel la
+# acepta y nunca la captura. Tiene que ir a plasmashell.
+poner plasmashell show-on-mouse-pos    $((M+86))   # Meta+V
+
+echo
+echo "Listo. Si alguno sale ✗, esa tecla la tiene algo que no se pudo liberar:"
+echo "  Preferencias del Sistema > Atajos, búscala y quítasela a mano."

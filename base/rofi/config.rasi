@@ -1,0 +1,14 @@
+configuration {
+    modes:                "drun,run,window";
+    font:                 "Outfit 11";
+    show-icons:           true;
+    icon-theme:           "Papirus-Dark";
+    drun-display-format:  "{name}";
+    display-drun:         "Apps";
+    display-run:          "Ejecutar";
+    display-window:       "Ventanas";
+    kb-cancel:            "Escape";
+    terminal:             "kitty";
+    sidebar-mode:         false;
+}
+@theme "~/.config/rofi/tokyonight.rasi"

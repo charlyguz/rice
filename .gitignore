@@ -1,0 +1,16 @@
+# respaldos que genera el instalador
+.config-backup-*/
+*.bak
+*.bak-*
+
+# caches y basura
+__pycache__/
+*.pyc
+.DS_Store
+*.swp
+*~
+
+# nada de credenciales ni datos personales
+.gitconfig.local
+*.local
+secrets*

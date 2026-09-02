@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ============================================================
+#  rice-notas — el "Bloc de notas": abre un .txt y a escribir.
+#
+#    rice-notas            abre el bloc de siempre
+#    rice-notas compra     abre/crea notas/compra.txt
+#    rice-notas -l         lista las notas que tienes
+#
+#  Todo en texto plano, en ~/Documentos/notas (o ~/Documents/notas).
+# ============================================================
+set -uo pipefail
+DIR="$HOME/Documentos/notas"; [ -d "$HOME/Documentos" ] || DIR="$HOME/Documents/notas"
+mkdir -p "$DIR"
+
+if [ "${1:-}" = "-l" ] || [ "${1:-}" = "--lista" ]; then
+  echo "Notas en $DIR:"
+  find "$DIR" -maxdepth 1 -type f -name '*.txt' -printf '  %f\t%TY-%Tm-%Td %TH:%TM\n' 2>/dev/null | sort || echo "  (ninguna todavía)"
+  exit 0
+fi
+
+NOMBRE="${1:-bloc}"
+F="$DIR/${NOMBRE%.txt}.txt"
+[ -e "$F" ] || printf '# %s — creada el %s\n\n' "$NOMBRE" "$(date '+%d/%m/%Y %H:%M')" > "$F"
+
+for e in kwrite kate featherpad mousepad gedit "${EDITOR:-}"; do
+  [ -n "$e" ] && command -v "$e" >/dev/null 2>&1 && exec "$e" "$F"
+done
+exec "${EDITOR:-nano}" "$F"

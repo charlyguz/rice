@@ -39,6 +39,10 @@ launcher archivos   "Archivos"        "dolphin"                     "system-file
 launcher navegador  "Navegador"       "brave-browser"               "internet-web-browser"   "Meta+W"
 launcher editor     "Editor"          "code"                        "text-editor"            "Meta+N"
 launcher calc       "Calculadora"     "kcalc"                       "accessories-calculator" "Meta+C"
+# rofi como lanzador: KRunner no se dibuja en Wayland con NVIDIA
+# (eglSwapBuffers 0x300d) y su ventana se queda en 1x1.
+launcher notas      "Notas"           "rice-notas"                  "accessories-text-editor" "Meta+Shift+B"
+launcher buscador   "Buscador"        "rofi -show drun"             "system-search"          "Meta+Space"
 launcher monitor    "Monitor"         "kitty -e btop"               "utilities-system-monitor" "Ctrl+Shift+Escape"
 launcher tema       "Cambiar tema"    "$HOME/.local/bin/rice-theme menu"      "preferences-desktop-theme" "Meta+Z"
 launcher fondo      "Cambiar fondo"   "$HOME/.local/bin/rice-wallpaper menu"  "preferences-desktop-wallpaper" "Meta+Shift+W"

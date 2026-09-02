@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Authors": [{ "Name": "rice" }],
+        "Category": "Date and Time",
+        "Description": "Reloj de escritorio: el día en grande, debajo la fecha y la hora.",
+        "Icon": "clock",
+        "Id": "org.rice.relojgrande",
+        "License": "GPL-3.0-or-later",
+        "Name": "Reloj grande",
+        "Version": "1.0"
+    },
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

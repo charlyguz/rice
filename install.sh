@@ -89,7 +89,11 @@ export PERFIL GPU KIND
 
 # ------------------------------------------------------------
 step "Comprobaciones"
-if ! sudo -n true 2>/dev/null && ! sudo -v 2>/dev/null; then
+# En dry-run no se toca nada, así que no tiene sentido pedir sudo:
+# quien quiera ver qué haría el instalador no debería tener que dárselo.
+if [ "$DRY" = 1 ]; then
+  info "(dry-run) no se comprueba sudo: no se va a instalar nada"
+elif ! sudo -n true 2>/dev/null && ! sudo -v 2>/dev/null; then
   if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx sudo && ! id -nG "$USER" | tr ' ' '\n' | grep -qx wheel; then
     err "Tu usuario ($USER) no puede usar sudo."
     echo; echo "    En Debian:  su -c 'usermod -aG sudo $USER'"

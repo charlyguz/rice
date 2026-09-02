@@ -34,7 +34,14 @@ done
 kv "gráfica" "$(echo "$GPUV" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 if echo "$GPUV" | grep -q NVIDIA; then
   [ -d /sys/module/nvidia ] && yes "driver NVIDIA" "cargado" || no "driver NVIDIA" "no cargado"
+  # En Debian este parámetro es 0400 root:root: como usuario se lee "?" aunque
+  # esté activo. Se mira también la línea de arranque y modprobe.d, que sí son
+  # legibles.
   M=$(cat /sys/module/nvidia_drm/parameters/modeset 2>/dev/null || echo "?")
+  if [ "$M" != Y ] && { grep -qs 'nvidia[-_]drm\.modeset=1' /proc/cmdline \
+     || grep -rqs 'options[[:space:]]\+nvidia[-_]drm.*modeset=1' /etc/modprobe.d/; }; then
+    M=Y
+  fi
   [ "$M" = Y ] && yes "nvidia_drm.modeset" "activo" || no "nvidia_drm.modeset" "en '$M' — Wayland lo necesita en Y"
 fi
 
@@ -60,8 +67,12 @@ ACC=$(kr --file kdeglobals --group General --key AccentColor)
 
 UIF=$(kr --file kdeglobals --group General --key font | cut -d, -f1)
 MOF=$(kr --file kdeglobals --group General --key fixed | cut -d, -f1)
-if fc-list 2>/dev/null | grep -qi "outfit"; then yes "fuente Outfit" "instalada"; else no "fuente Outfit" "no instalada"; fi
-if fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then yes "Nerd Font" "instalada"; else no "Nerd Font" "faltan los iconos"; fi
+# Se vuelca fc-list a una variable: con `set -o pipefail`, `fc-list | grep -q`
+# devuelve 141 porque grep cierra el pipe y fc-list muere con SIGPIPE, lo que
+# marcaba como ausentes fuentes que sí estaban instaladas.
+FCL=$(fc-list 2>/dev/null || true)
+if grep -qi "outfit" <<<"$FCL"; then yes "fuente Outfit" "instalada"; else no "fuente Outfit" "no instalada"; fi
+if grep -qi "JetBrainsMono Nerd" <<<"$FCL"; then yes "Nerd Font" "instalada"; else no "Nerd Font" "faltan los iconos"; fi
 [ "$UIF" = "Outfit" ] && yes "fuente de interfaz" "$UIF" || alt "fuente de interfaz" "${UIF:-sin definir}"
 [ "$MOF" = "JetBrainsMono Nerd Font" ] && yes "fuente monoespaciada" "$MOF" || alt "fuente monoespaciada" "${MOF:-sin definir}"
 
@@ -84,8 +95,11 @@ for pair in "Meta+Return:terminal" "Meta+E:archivos" "Meta+V:portapapeles" "Prin
 done
 
 h "Shell"
-if [ "$SHELL" = "$(command -v zsh 2>/dev/null)" ]; then yes "shell por defecto" "zsh"
-elif have zsh; then alt "shell por defecto" "$SHELL (zsh instalado pero sin poner)"
+# $SHELL es el del proceso actual, no el del usuario: si rice-doctor corre
+# desde bash da un falso negativo. El shell de login está en /etc/passwd.
+LOGIN_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
+if [ "$LOGIN_SHELL" = "$(command -v zsh 2>/dev/null)" ]; then yes "shell por defecto" "zsh"
+elif have zsh; then alt "shell por defecto" "$LOGIN_SHELL (zsh instalado pero sin poner)"
 else no "shell por defecto" "zsh no está instalado"; fi
 [ -f "$HOME/.zshrc" ] && grep -q powerlevel10k "$HOME/.zshrc" && yes ".zshrc" "el del repo" || no ".zshrc" "no es el del repo"
 [ -f "$HOME/.p10k.zsh" ] && yes ".p10k.zsh" "prompt configurado" || no ".p10k.zsh" "falta"

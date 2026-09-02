@@ -39,6 +39,36 @@ duf
 eza
 bat
 fzf
+rofi
+bat
+tealdeer
+git-delta
+lazygit
+atuin
+tmux
+du-dust
+procs
+ncdu
+chafa
+libchafa0
+libmagickwand-dev
+trash-cli
+neovim
+entr
+just
+hexyl
+sd
+xh
+glow
+direnv
+gping
+broot
+mc
+w3m
+lynx
+tty-clock
+cava
+cmatrix
 pv
 plocate
 less
@@ -81,6 +111,36 @@ duf
 eza
 bat
 fzf
+rofi
+bat
+tealdeer
+git-delta
+lazygit
+atuin
+tmux
+du-dust
+procs
+ncdu
+chafa
+libchafa0
+libmagickwand-dev
+trash-cli
+neovim
+entr
+just
+hexyl
+sd
+xh
+glow
+direnv
+gping
+broot
+mc
+w3m
+lynx
+tty-clock
+cava
+cmatrix
 pv
 plocate
 less
@@ -105,6 +165,7 @@ P
 # En Debian no están empaquetados; se resuelven aparte
 terminal_faltantes_debian() { cat <<'P'
 yazi|se baja el binario de GitHub (releases)
+helix|binario de GitHub; en Debian 13 no está empaquetado
 starship|se instala con su script oficial
 oh-my-zsh|lo clona install.sh en ~/.local/share/oh-my-zsh
 zsh-history-substring-search|lo clona install.sh
@@ -292,7 +353,7 @@ python3-pyqt5
 python3-reportlab
 python3-defusedxml
 python3-packaging
-openjdk-17-jdk
+openjdk-21-jdk
 nodejs
 npm
 P
@@ -345,7 +406,7 @@ P
 # ---------------- ESCRITORIO: Plasma (perfil Debian) ----------------
 pkgs_plasma() { cat <<'P'
 plasma-systemmonitor
-kdeplasma-addons
+plasma-widgets-addons
 kde-config-gtk-style
 breeze-gtk-theme
 plasma-browser-integration

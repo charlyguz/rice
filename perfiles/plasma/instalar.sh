@@ -22,6 +22,21 @@ else ok "Plasma $(plasmashell --version 2>/dev/null | awk '{print $2}')"; fi
 
 [ "$DRY" = 1 ] && { info "(dry-run) ajustes, atajos, tema y panel de Plasma"; exit 0; }
 
+step "Widgets propios"
+# El reloj de Plasma pone SIEMPRE la hora en grande y no deja invertirlo,
+# así que el reloj de escritorio (día grande, fecha y hora debajo) es un
+# plasmoide propio. Es QML: no hay que descargar nada.
+if [ -d "$P/plasmoids" ]; then
+  mkdir -p "$DATA/plasma/plasmoids"
+  for w in "$P"/plasmoids/*/; do
+    [ -d "$w" ] || continue
+    n=$(basename "$w")
+    rm -rf "$DATA/plasma/plasmoids/$n"
+    cp -a "$w" "$DATA/plasma/plasmoids/$n" && ok "widget $n"
+  done
+  have kbuildsycoca6 && kbuildsycoca6 --noincremental >/dev/null 2>&1
+fi
+
 step "Tema de escritorio"
 mkdir -p "$DATA/plasma/desktoptheme"
 rm -rf "$DATA/plasma/desktoptheme/Rice"
@@ -35,6 +50,14 @@ if have kwriteconfig6 || have kwriteconfig5; then
   RICE_ICONS=Papirus-Dark RICE_CURSOR=Bibata-Modern-Ice RICE_UI_FONT=Outfit \
     RICE_MONO_FONT="JetBrainsMono Nerd Font" bash "$P/apply-settings.sh" 2>&1 | sed 's/^/  /'
   bash "$P/shortcuts.sh" 2>&1 | sed 's/^/  /'
+  # shortcuts.sh solo escribe el fichero, y KDE lo machaca al salir además de
+  # rechazar las teclas ya ocupadas. rice-shortcuts las aplica por D-Bus,
+  # liberando antes al ocupante, que es lo que de verdad las deja puestas.
+  if pgrep -x plasmashell >/dev/null 2>&1; then
+    bash "$REPO/bin/rice-shortcuts" 2>&1 | sed 's/^/  /'
+  else
+    info "Plasma no corre: al entrar a tu sesión ejecuta  rice-shortcuts"
+  fi
   if have kwriteconfig6; then kwriteconfig6 --file plasmarc --group Theme --key name Rice; fi
   have plasma-apply-cursortheme && plasma-apply-cursortheme Bibata-Modern-Ice >/dev/null 2>&1 || true
   if [ ! -s "$CFG/kwinrulesrc" ]; then cp "$P/kwinrules.conf" "$CFG/kwinrulesrc"; ok "reglas de ventana"; fi

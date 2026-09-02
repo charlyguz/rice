@@ -69,6 +69,31 @@ poner "$REPO/base/micro/bindings.json"       "$CFG/micro/bindings.json"
 poner "$REPO/base/starship.toml"             "$CFG/starship.toml"
 poner "$REPO/base/alacritty/alacritty.toml"  "$CFG/alacritty/alacritty.toml"
 poner "$REPO/base/fastfetch/config.jsonc"    "$CFG/fastfetch/config.jsonc"
+poner "$REPO/base/rofi/config.rasi"          "$CFG/rofi/config.rasi"
+poner "$REPO/base/rofi/tokyonight.rasi"      "$CFG/rofi/tokyonight.rasi"
+poner "$REPO/base/tmux/tmux.conf"            "$HOME/.tmux.conf"
+poner "$REPO/base/helix/config.toml"         "$CFG/helix/config.toml"
+poner "$REPO/base/cava/config"               "$CFG/cava/config"
+
+# Helix no está en Debian: binario de GitHub. Necesita sus runtime files
+# (sintaxis y temas) o arranca sin resaltado.
+if [ "$DRY" = 0 ] && ! have hx; then
+  T=$(mktemp -d)
+  HXTAG=$(_fetch_effective_url https://github.com/helix-editor/helix/releases/latest 2>/dev/null)
+  HXTAG="${HXTAG##*/tag/}"
+  if [ -n "$HXTAG" ] && dl "https://github.com/helix-editor/helix/releases/download/${HXTAG}/helix-${HXTAG}-x86_64-linux.tar.xz" "$T/hx.tar.xz"; then
+    tar -xf "$T/hx.tar.xz" -C "$T" 2>/dev/null
+    HXD=$(find "$T" -maxdepth 1 -type d -name "helix-*" | head -1)
+    if [ -n "$HXD" ]; then
+      install -m755 "$HXD/hx" "$BIN/hx" 2>/dev/null
+      mkdir -p "$CFG/helix"; rm -rf "$CFG/helix/runtime"
+      cp -a "$HXD/runtime" "$CFG/helix/runtime" 2>/dev/null && ok "helix $HXTAG"
+    fi
+  else warn "no pude bajar helix"; MISSING+=(helix); fi
+  rm -rf "$T"
+else
+  have hx && info "ya estaba: helix"
+fi
 if [ "$DRY" = 0 ] && [ -d "$REPO/base/micro/colorschemes" ]; then
   mkdir -p "$CFG/micro/colorschemes"; cp -f "$REPO"/base/micro/colorschemes/* "$CFG/micro/colorschemes/" 2>/dev/null
 fi
@@ -86,7 +111,20 @@ ok "GTK + carpetas en español"
 
 step "Git"
 if [ "$DRY" = 0 ] && [ ! -f "$HOME/.gitconfig" ]; then
-  cp "$REPO/base/git/gitconfig" "$HOME/.gitconfig"; ok ".gitconfig (nombre, correo y gh como credential helper)"
+  cp "$REPO/base/git/gitconfig" "$HOME/.gitconfig"
+  ok ".gitconfig (alias, delta como pager, gh para credenciales)"
+  # El nombre y el correo son de cada uno: nunca van en el repo.
+  if [ -z "$(git config --global user.email 2>/dev/null)" ]; then
+    if [ "${ASSUME_YES:-0}" != 1 ] && [ -r /dev/tty ]; then
+      read -r -p "  Tu nombre para los commits (Enter para dejarlo): " _gn </dev/tty || _gn=""
+      read -r -p "  Tu correo para los commits (Enter para dejarlo): " _ge </dev/tty || _ge=""
+      [ -n "$_gn" ] && git config --global user.name  "$_gn"
+      [ -n "$_ge" ] && git config --global user.email "$_ge"
+      [ -n "$_ge" ] && ok "git configurado como $_gn <$_ge>"
+    fi
+    [ -z "$(git config --global user.email 2>/dev/null)" ] && \
+      warn "sin user.email: configúralo con  git config --global user.email tu@correo"
+  fi
 else info "ya tenías .gitconfig: no lo toco"; fi
 
 step "Comandos y paletas"
@@ -135,6 +173,23 @@ if [ "$DRY" = 0 ]; then
   mkdir -p "$HOME/.icons/default"
   printf '[Icon Theme]\nName=Default\nInherits=Bibata-Modern-Ice\n' > "$HOME/.icons/default/index.theme"
   fc-cache -f >/dev/null 2>&1
+fi
+
+# Tema de GRUB. Solo si hay GRUB y no estamos en modo solo-terminal.
+if [ -d /boot/grub ] && [ "${SOLO_TERMINAL:-0}" != 1 ]; then
+  bash "$REPO/base/grub/instalar.sh" || warn "el tema de GRUB terminó con avisos"
+fi
+
+step "Imágenes del terminal"
+if [ "$DRY" = 0 ]; then
+  # Carpeta en español si existe (las crea xdg-user-dirs), si no la inglesa.
+  IMGDIR="$HOME/Imágenes/terminal-imgs"
+  [ -d "$HOME/Imágenes" ] || IMGDIR="$HOME/Pictures/terminal-imgs"
+  mkdir -p "$IMGDIR"
+  # -n: no pisa las que ya tengas, para no borrar las tuyas al reinstalar
+  cp -n "$REPO"/assets/terminal-imgs/* "$IMGDIR/" 2>/dev/null || true
+  ok "$(ls -1 "$IMGDIR" 2>/dev/null | wc -l) imágenes en $IMGDIR"
+  info "rice-fetch elige una al azar cada vez que abres el terminal"
 fi
 
 step "Fondos y tema"

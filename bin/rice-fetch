@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+# ============================================================
+#  rice-fetch — fastfetch que se adapta al terminal.
+#
+#  · Si el terminal dibuja imágenes (kitty), saca una al azar de
+#    la carpeta de imágenes.
+#  · Si no (TTY pelada, SSH desde un terminal tonto, otro
+#    emulador), cae al ASCII grande a color.
+#
+#  Carpeta de imágenes, por orden:
+#    $RICE_IMGS  ·  ~/Imágenes/terminal-imgs  ·  ~/Pictures/terminal-imgs
+#  Si no hay ninguna, usa el logo suelto de ~/.local/share/rice/logo.png
+#
+#  Forzar a mano:
+#    rice-fetch --ascii     obliga al ASCII
+#    rice-fetch --imagen    obliga a la imagen
+# ============================================================
+MODO=auto
+case "${1:-}" in
+  --ascii)          MODO=ascii;  shift ;;
+  --imagen|--image) MODO=imagen; shift ;;
+esac
+
+# ---------------- ¿dibuja imágenes este terminal? ----------------
+soporta_imagen() {
+  [ "$MODO" = imagen ] && return 0
+  [ "$MODO" = ascii  ] && return 1
+  case "$TERM" in linux|dumb|vt100|vt220|"") return 1 ;; esac
+  [ -n "$KITTY_WINDOW_ID" ] && return 0
+  [ "$TERM" = "xterm-kitty" ] && return 0
+  case "$TERM_PROGRAM" in ghostty|WezTerm|iTerm.app) return 0 ;; esac
+  return 1
+}
+
+# ---------------- elegir imagen al azar ----------------
+# Los nombres llevan espacios, '&', '!' y hasta Unicode, así que
+# todo va entrecomillado y se elige con shuf sobre la lista.
+elegir_imagen() {
+  for d in "$RICE_IMGS" "$HOME/Imágenes/terminal-imgs" "$HOME/Pictures/terminal-imgs"; do
+    [ -n "$d" ] && [ -d "$d" ] || continue
+    img=$(find "$d" -maxdepth 1 -type f \
+            \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \
+               -o -iname '*.gif' -o -iname '*.webp' -o -iname '*.bmp' \) 2>/dev/null \
+          | shuf -n 1)
+    [ -n "$img" ] && { printf '%s\n' "$img"; return 0; }
+  done
+  # sin carpeta: el logo suelto de siempre
+  [ -r "${RICE_LOGO:-$HOME/.local/share/rice/logo.png}" ] \
+    && { printf '%s\n' "${RICE_LOGO:-$HOME/.local/share/rice/logo.png}"; return 0; }
+  return 1
+}
+
+if soporta_imagen && IMG=$(elegir_imagen); then
+  # kitty-icat delega en `kitten icat`, que es lo que mejor se
+  # entiende con el terminal; si no está, protocolo directo.
+  if command -v kitten >/dev/null 2>&1; then
+    exec fastfetch --logo-type kitty-icat --logo "$IMG" \
+                   --logo-width 24 --logo-padding-top 1 --logo-padding-right 3 "$@"
+  fi
+  exec fastfetch --logo-type kitty-direct --logo "$IMG" \
+                 --logo-width 24 --logo-padding-top 1 --logo-padding-right 3 "$@"
+fi
+exec fastfetch --logo-type builtin --logo-padding-top 1 --logo-padding-right 3 "$@"

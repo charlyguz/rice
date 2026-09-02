@@ -8,6 +8,22 @@
 #  Lo tuyo va en ~/.zshrc.local — ese archivo no lo pisa nadie.
 # ============================================================
 
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+# ------------------------------------------------------------
+#  Saludo del terminal.
+#  Va ANTES del instant prompt de p10k a propósito: ese preámbulo
+#  captura la salida en un buffer para poder redibujar el prompt, y
+#  fastfetch se niega a pintar imágenes cuando su salida no es un
+#  terminal directo ("Image logo is not supported in pipe mode").
+#  Puesto aquí arriba, escribe directo al terminal y sí saca la imagen.
+# ------------------------------------------------------------
+# Ruta explícita a propósito: aquí arriba ~/.local/bin todavía NO está en
+# el PATH (se añade más abajo), así que command -v no lo encontraría.
+[[ -o interactive ]] && for _rf in "$HOME/.local/bin/rice-fetch" /usr/local/bin/rice-fetch; do
+  [[ -x "$_rf" ]] && { "$_rf"; break }
+done; unset _rf
+
 # --- Instant prompt de p10k. Va PRIMERO, siempre. Todo lo que pida
 #     algo por teclado (contraseñas, [y/n]) tiene que ir ARRIBA de esto.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
@@ -72,6 +88,7 @@ export LESS_TERMCAP_me="$(tput sgr0 2> /dev/null)"
 # ------------------------------------------------------------
 _RICE_ZSH="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 _rice "$_RICE_ZSH/aliases-comunes.zsh"
+_rice "$_RICE_ZSH/aliases-herramientas.zsh"
 case "$RICE_DISTRO" in
   arch)   _rice "$_RICE_ZSH/aliases-arch.zsh" ;;
   debian) _rice "$_RICE_ZSH/aliases-debian.zsh" ;;
@@ -85,13 +102,20 @@ _rice /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme \
   || _rice "$_ZL/powerlevel10k/powerlevel10k.zsh-theme"
 
 # ------------------------------------------------------------
+#  Autocompletado inteligente (fzf-tab + zstyle).
+#  Va ANTES de las sugerencias y el resaltado: esos dos envuelven
+#  widgets y fzf-tab tiene que envolverlos primero.
+# ------------------------------------------------------------
+_rice "$_RICE_ZSH/completado.zsh"
+
+# ------------------------------------------------------------
 #  Sugerencias, resaltado y búsqueda en el historial.
 #  El resaltado SIEMPRE al final: es requisito del plugin.
 # ------------------------------------------------------------
 _rice /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
   || _rice /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
   || _rice "$_ZL/zsh-autosuggestions/zsh-autosuggestions.zsh"
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#565f89'
+_rice "$_RICE_ZSH/sugerencias.zsh"
 
 _rice /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh \
   || _rice /usr/share/zsh-history-substring-search/zsh-history-substring-search.zsh \
@@ -131,6 +155,11 @@ if command -v fzf >/dev/null 2>&1; then
 --color=bg+:#292e42,bg:#1a1b26,spinner:#bb9af7,hl:#7aa2f7 \
 --color=fg:#c0caf5,header:#7aa2f7,info:#e0af68,pointer:#bb9af7 \
 --color=marker:#9ece6a,fg+:#c0caf5,prompt:#7aa2f7,hl+:#7aa2f7"
+  # fzf ata Tab a su propio completado y pisa a fzf-tab, que se cargó antes.
+  # Los atajos de fzf (Ctrl+T, Ctrl+R, Alt+C) sí los queremos; el Tab no.
+  if (( $+functions[fzf-tab-complete] )); then
+    bindkey '^I' fzf-tab-complete
+  fi
 fi
 
 # ------------------------------------------------------------
@@ -152,7 +181,6 @@ command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 # ------------------------------------------------------------
 #  Saludo al abrir el terminal. Si cansa, comenta estas líneas.
 # ------------------------------------------------------------
-[[ -o interactive ]] && command -v fastfetch >/dev/null 2>&1 && fastfetch
 
 # ------------------------------------------------------------
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

@@ -1,0 +1,63 @@
+/* Tokyo Night para rofi — hex por hex de temas/paletas/tokyonight.conf */
+* {
+    bg:        #1a1b26;
+    bg-alt:    #24283b;
+    surface:   #16161e;
+    fg:        #c0caf5;
+    fg-dim:    #a9b1d6;
+    accent:    #7aa2f7;
+    secondary: #bb9af7;
+    urgent:    #f7768e;
+    border-c:  #414868;
+
+    background-color: transparent;
+    text-color:       @fg;
+}
+
+window {
+    transparency:     "real";
+    background-color: @bg;
+    border:           2px;
+    border-color:     @accent;
+    border-radius:    14px;
+    width:            42%;
+    padding:          0px;
+    location:         center;
+    anchor:           center;
+}
+
+mainbox { padding: 14px; spacing: 10px; children: [ inputbar, listview ]; }
+
+inputbar {
+    background-color: @bg-alt;
+    border-radius:    10px;
+    padding:          10px 14px;
+    spacing:          10px;
+    children:         [ prompt, entry ];
+}
+
+prompt  { text-color: @accent; font: "Outfit Bold 11"; }
+entry   { placeholder: "Buscar…"; placeholder-color: @fg-dim; cursor: text; }
+
+listview {
+    lines:         8;
+    scrollbar:     false;
+    spacing:       4px;
+    dynamic:       true;
+    fixed-height:  false;
+}
+
+element          { padding: 9px 12px; border-radius: 9px; spacing: 10px; }
+element normal.normal   { text-color: @fg; }
+element alternate.normal{ text-color: @fg; }
+element selected.normal { background-color: @accent; text-color: @surface; }
+element normal.urgent   { text-color: @urgent; }
+element selected.urgent { background-color: @urgent; text-color: @surface; }
+element normal.active   { text-color: @secondary; }
+element selected.active { background-color: @secondary; text-color: @surface; }
+
+element-icon { size: 22px; vertical-align: 0.5; }
+element-text { vertical-align: 0.5; }
+
+message  { background-color: @bg-alt; border-radius: 9px; padding: 8px; }
+textbox  { text-color: @fg-dim; }
