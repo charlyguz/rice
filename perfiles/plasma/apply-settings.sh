@@ -104,7 +104,13 @@ kw --file klipperrc --group General --key MaxClipItems 60
 kw --file klipperrc --group General --key KeepClipboardContents true
 kw --file klipperrc --group General --key PreventEmptyClipboard true
 kw --file klipperrc --group General --key IgnoreImages false
-kw --file klipperrc --group General --key SyncClipboards true
+# SyncClipboards=false a propósito. En X11 hay DOS portapapeles: el de
+# Ctrl+C (CLIPBOARD) y el de seleccionar con el ratón (PRIMARY). Con esto en
+# true, Klipper los fusiona y CUALQUIER texto que subrayes machaca lo que
+# tenías copiado: imposible seleccionar algo para sustituirlo.
+kw --file klipperrc --group General --key SyncClipboards false
+# Y que las selecciones del ratón tampoco ensucien el historial.
+kw --file klipperrc --group General --key IgnoreSelection true
 
 echo "· capturas (Spectacle)"
 mkdir -p "$HOME/Pictures/Screenshots"

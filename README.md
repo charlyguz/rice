@@ -270,6 +270,35 @@ Para revertirlo: `sudo chmod +x /etc/grub.d/05_debian_theme && sudo update-grub`
 
 ---
 
+## El modo sin escritorio (SSH, nube, TTY)
+
+```bash
+git clone https://github.com/charlyguz/rice ~/rice && cd ~/rice
+./install.sh --terminal
+```
+
+Instala shell, prompt, alias, autocompletado y todas las apps de terminal.
+**No toca el escritorio, ni GRUB, ni GTK, ni descarga las imágenes** — el saludo
+detecta que no hay terminal gráfico y usa el ASCII.
+
+Ojo con un detalle que costó un rato: `install.sh` tiene que **exportar**
+`SOLO_TERMINAL`, porque las guardas viven en `base/instalar.sh`, que corre como
+sub-script. Sin ese export, el modo terminal acababa instalando el tema de GRUB
+en un servidor.
+
+Lo primero al entrar a una máquina nueva es `tmux`: si se corta la conexión, la
+sesión sigue viva y vuelves con `tmux a`.
+
+---
+
+## Discord y Spotify
+
+Ninguno está en Debian. Van por **Flatpak con `--user`**, que instala en el home
+y no añade repos de apt de terceros ni toca el sistema. El instalador pregunta
+antes, y se los salta en modo `--terminal`.
+
+---
+
 ## Notas
 
 **NVIDIA.** Tanto Hyprland como la sesión Wayland de Plasma necesitan

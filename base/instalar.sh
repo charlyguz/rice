@@ -100,6 +100,11 @@ fi
 ok "kitty, btop, micro, starship, alacritty, fastfetch"
 
 step "GTK y carpetas"
+if [ "${SOLO_TERMINAL:-0}" = 1 ]; then
+  info "sin escritorio: solo las carpetas del home, sin temas GTK"
+  poner "$REPO/base/xdg/user-dirs.dirs"   "$CFG/user-dirs.dirs"
+  [ "$DRY" = 0 ] && have xdg-user-dirs-update && xdg-user-dirs-update >/dev/null 2>&1
+else
 poner "$REPO/base/gtk-3.0/settings.ini" "$CFG/gtk-3.0/settings.ini"
 poner "$REPO/base/gtk-3.0/gtk.css"      "$CFG/gtk-3.0/gtk.css"
 poner "$REPO/base/gtk-4.0/settings.ini" "$CFG/gtk-4.0/settings.ini"
@@ -108,6 +113,7 @@ poner "$REPO/base/gtk-4.0/gtk.css"      "$CFG/gtk-4.0/gtk.css"
 poner "$REPO/base/xdg/user-dirs.dirs"   "$CFG/user-dirs.dirs"
 [ "$DRY" = 0 ] && have xdg-user-dirs-update && xdg-user-dirs-update >/dev/null 2>&1
 ok "GTK + carpetas en español"
+fi
 
 step "Git"
 if [ "$DRY" = 0 ] && [ ! -f "$HOME/.gitconfig" ]; then
@@ -161,7 +167,9 @@ if [ "$DRY" = 0 ]; then
     fi
     rm -rf "$T"
   fi
-  if [ ! -d "$DATA/icons/Bibata-Modern-Ice" ] && [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
+  if [ "${SOLO_TERMINAL:-0}" = 1 ]; then
+    info "sin escritorio: me salto el cursor"
+  elif [ ! -d "$DATA/icons/Bibata-Modern-Ice" ] && [ ! -d /usr/share/icons/Bibata-Modern-Ice ]; then
     T=$(mktemp -d)
     U="https://github.com/ful1e5/Bibata_Cursor/releases/latest/download/Bibata-Modern-Ice.tar.xz"
     dl "$U" "$T/b.tar.xz" 2>/dev/null || U=$(gh_latest_asset ful1e5/Bibata_Cursor "Bibata-Modern-Ice.tar.xz" 2>/dev/null || true)
@@ -181,7 +189,9 @@ if [ -d /boot/grub ] && [ "${SOLO_TERMINAL:-0}" != 1 ]; then
 fi
 
 step "Imágenes del terminal"
-if [ "$DRY" = 0 ]; then
+if [ "${SOLO_TERMINAL:-0}" = 1 ]; then
+  info "sin escritorio: me salto las imágenes (el saludo usará ASCII)"
+elif [ "$DRY" = 0 ]; then
   # Carpeta en español si existe (las crea xdg-user-dirs), si no la inglesa.
   IMGDIR="$HOME/Imágenes/terminal-imgs"
   [ -d "$HOME/Imágenes" ] || IMGDIR="$HOME/Pictures/terminal-imgs"
@@ -192,12 +202,38 @@ if [ "$DRY" = 0 ]; then
   info "rice-fetch elige una al azar cada vez que abres el terminal"
 fi
 
+step "Apps de escritorio (Flatpak)"
+# Discord y Spotify no están en Debian. Flatpak evita añadir repos de apt
+# de terceros, y se instala en el home (--user): no toca el sistema.
+if [ "${SOLO_TERMINAL:-0}" = 1 ]; then
+  info "sin escritorio: me las salto"
+elif [ "$DRY" = 1 ]; then
+  info "(dry-run) Discord y Spotify por Flatpak"
+elif have flatpak && [ "${DO_APPS:-1}" = 1 ]; then
+  flatpak remote-add --user --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo >/dev/null 2>&1
+  for app in com.discordapp.Discord com.spotify.Client; do
+    if flatpak info --user "$app" >/dev/null 2>&1; then
+      info "ya estaba: $app"
+    elif ask "¿Instalo ${app##*.}? (Flatpak, descarga grande la primera vez)" y; then
+      flatpak install --user -y --noninteractive flathub "$app" >/dev/null 2>&1 \
+        && ok "${app##*.}" || { warn "falló ${app##*.}"; MISSING+=("${app##*.}"); }
+    fi
+  done
+else
+  info "sin flatpak: Discord y Spotify se quedan fuera"
+fi
+
 step "Fondos y tema"
 if [ "$DRY" = 0 ]; then
+  if [ "${SOLO_TERMINAL:-0}" = 1 ]; then
+    info "sin escritorio: me salto los fondos"
+  else
   mkdir -p "$HOME/Imágenes/Wallpapers" "$HOME/Pictures/Wallpapers" 2>/dev/null
   W="$HOME/Imágenes/Wallpapers"; [ -d "$HOME/Imágenes" ] || W="$HOME/Pictures/Wallpapers"
   cp -n "$REPO"/wallpapers/* "$W/" 2>/dev/null || true
   ok "$(ls -1 "$W" 2>/dev/null | wc -l) fondos en $W"
+  fi
   PAL=$(cat "$CFG/rice/current-palette" 2>/dev/null || echo tokyonight)
   PATH="$BIN:$PATH" rice-theme "$PAL" >/dev/null 2>&1 && ok "paleta: $PAL" || warn "aplica el tema a mano: rice-theme tokyonight"
 fi

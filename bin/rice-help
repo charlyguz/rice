@@ -1,41 +1,197 @@
 #!/usr/bin/env bash
-cat <<'TXT'
-  Comandos de este escritorio (shell plano en ~/.local/bin)
+# ============================================================
+#  rice-help — qué tengo, qué hace y cómo se saca.
+#
+#    rice-help              todo
+#    rice-help atajos       teclas
+#    rice-help apps         apps de terminal: qué son y cómo se lanzan
+#    rice-help comandos     los rice-*
+#    rice-help alias        atajos de shell
+#    rice-help rutas        dónde vive cada config
+#    rice-help terminal     el modo sin escritorio (SSH, nube, TTY)
+# ============================================================
+set -uo pipefail
+if [ -t 1 ]; then
+  B=$'\033[1m'; D=$'\033[2m'; N=$'\033[0m'
+  AZ=$'\033[38;2;122;162;247m'; VE=$'\033[38;2;158;206;106m'
+  MO=$'\033[38;2;187;154;247m'; AM=$'\033[38;2;224;175;104m'; GR=$'\033[38;2;86;95;137m'
+else B=; D=; N=; AZ=; VE=; MO=; AM=; GR=; fi
 
-  rice-theme [nombre|list|toggle|menu|reload]   cambiar la paleta de color
-  rice-wallpaper menu|next|prev|random|set <img>
-  rice-panel [reset|restore|restart]            rehacer / arreglar el panel
-  rice-doctor                                   revisión: qué falta y qué no
-  rice-help                                     esto
+PATH="$HOME/.local/bin:$PATH"; export PATH
 
-  Reaplicar la configuración de Plasma (si tocaste algo y quieres volver):
-      ~/rice-kde/plasma/apply-settings.sh
-      ~/rice-kde/plasma/shortcuts.sh
-      ~/rice-kde/install.sh --solo-panel
+# Debian renombra algunos binarios porque el nombre corto ya estaba cogido.
+# Aquí se comprueba el nombre real, no el alias (los alias no existen
+# dentro de un script).
+hay() {
+  command -v "$1" >/dev/null 2>&1 && return 0
+  case "$1" in
+    bat)  command -v batcat  >/dev/null 2>&1 ;;
+    fd)   command -v fdfind  >/dev/null 2>&1 ;;
+    trash-put) command -v trash-put >/dev/null 2>&1 ;;
+    *) return 1 ;;
+  esac
+}
+tit() { printf '\n%s%s▌ %s%s\n' "$B" "$AZ" "$1" "$N"; }
+sub() { printf '%s  %s%s\n' "$MO" "$1" "$N"; }
+# fila <comando> <para qué> [cómo se usa]
+fila() {
+  local m u
+  if hay "$1"; then m="${VE}✓${N}"; else m="${GR}·${N}"; fi
+  u="${3:-}"
+  printf '   %s %s%-13s%s %-42s %s%s%s\n' "$m" "$B" "$1" "$N" "$2" "$D" "$u" "$N"
+}
+tec() { printf '   %s%-22s%s %s\n' "$AM" "$1" "$N" "$2"; }
 
-  Atajos principales
-    Meta+Return / Meta+T   terminal (kitty)
-    Meta+E                 archivos (Dolphin)
-    Meta+W                 navegador
-    Meta+N                 editor
-    Meta+Space             KRunner (escribe y corre)
-    Meta                   lanzador de aplicaciones
-    Meta+Q                 cerrar ventana
-    Meta+F / Meta+D        pantalla completa / maximizar
-    Meta+1..4              escritorios
-    Meta+Shift+1..4        llevar la ventana al escritorio
-    Meta+Tab               vista general
-    Print                  captura de región
-    Meta+V                 portapapeles
-    Meta+L                 bloquear
-    Meta+Z                 cambiar tema
-    Meta+Shift+W           cambiar fondo
+sec_atajos() {
+  tit "ATAJOS DE TECLADO"
+  sub "Lanzar cosas"
+  tec "Meta+Return · Meta+T" "terminal (kitty)"
+  tec "Meta+E"               "archivos (Dolphin)"
+  tec "Meta+W"               "navegador"
+  tec "Meta+N"               "editor (VS Code)"
+  tec "Meta+C"               "calculadora"
+  tec "Meta+Space"           "buscador de aplicaciones (rofi)"
+  tec "Meta"                 "menú de inicio"
+  tec "Meta+Shift+B"         "notas rápidas en .txt"
+  tec "Meta+Z"               "cambiar la paleta de color"
+  tec "Meta+Shift+W"         "cambiar el fondo"
+  tec "Ctrl+Shift+Esc"       "monitor del sistema (btop)"
+  sub "Ventanas"
+  tec "Meta+Q"               "cerrar"
+  tec "Meta+D"               "maximizar"
+  tec "Meta+F"               "pantalla completa"
+  tec "Meta+H"               "minimizar"
+  tec "Meta+flechas"         "mover el foco"
+  tec "Meta+Shift+flechas"   "encajar la ventana a un lado"
+  tec "Meta+Tab"             "vista general"
+  sub "Escritorios"
+  tec "Meta+1..4"            "ir al escritorio"
+  tec "Meta+Shift+1..4"      "llevar la ventana ahí"
+  tec "Meta+Ctrl+←/→"        "anterior / siguiente"
+  sub "Sistema"
+  tec "Print"                "captura de una región"
+  tec "Meta+Print"           "captura completa"
+  tec "Meta+Shift+Print"     "captura de la ventana"
+  tec "Meta+V"               "historial del portapapeles"
+  tec "Meta+L"               "bloquear la pantalla"
+  printf '\n   %s¿Se descolocaron? →  rice-shortcuts   los vuelve a poner%s\n' "$D" "$N"
+}
 
-  Shell:    zsh + powerlevel10k   ·   ~/.zshrc  y  ~/.p10k.zsh
-            (tus cosas van en ~/.zshrc.local, así no se pisan)
-            rehacer el prompt con el asistente:  p10k configure
+sec_apps() {
+  tit "APPS DE TERMINAL — qué son y cómo se sacan"
+  printf '   %s✓ = instalada    · = no la tienes%s\n' "$D" "$N"
+  sub "Ver y buscar ficheros"
+  fila eza     "ls moderno, con colores e iconos"        "eza -la  ·  eza --tree"
+  fila bat     "cat con sintaxis (aquí es batcat)"       "bat fichero"
+  fila fd      "find sencillo (aquí es fdfind)"          "fd nombre"
+  fila rg      "buscar TEXTO dentro de ficheros"         "rg palabra"
+  fila fzf     "buscador difuso; lo usa todo lo demás"   "Ctrl+R  ·  Ctrl+T"
+  fila yazi    "explorador de archivos visual"           "y   (sale en esa carpeta)"
+  fila broot   "navegar árboles enormes"                 "br"
+  fila mc      "dos paneles, clásico"                    "mc"
+  sub "Sistema"
+  fila btop    "procesos, CPU, RAM, red"                 "btop"
+  fila dust    "qué ocupa el disco, visual"              "du"
+  fila ncdu    "disco, navegable y borrable"             "discos"
+  fila procs   "lista de procesos en color"              "ps"
+  fila duf     "espacio libre por disco"                 "duf"
+  fila hexyl   "ver un binario en hexadecimal"           "hexyl fichero"
+  sub "Git"
+  fila lazygit "git entero en una interfaz"              "lg"
+  fila delta   "diffs legibles (automático en git)"      "git diff"
+  fila gh      "GitHub: PRs, issues, repos"              "gh pr list"
+  sub "Editores"
+  fila hx      "Helix: editor modal moderno"             "e fichero"
+  fila nvim    "Neovim"                                  "nvim fichero"
+  fila micro   "editor simple, tipo bloc de notas"       "micro fichero"
+  sub "Red e internet"
+  fila xh      "peticiones HTTP legibles"                "http GET ejemplo.com"
+  fila w3m     "navegar la web desde la terminal"        "web google.com"
+  fila gping   "ping con gráfica"                        "ping-g google.com"
+  sub "Ayuda y textos"
+  fila tldr    "ejemplos de un comando, no la manpage"   "tldr tar"
+  fila glow    "leer Markdown con formato"               "md README.md"
+  sub "Sesiones y entornos"
+  fila tmux    "varias terminales en una; sobrevive a SSH" "tmux  ·  tmux a"
+  fila atuin   "historial buscable entre máquinas"       "Ctrl+R"
+  fila zoxide  "cd que aprende a dónde vas"              "z carpeta"
+  fila direnv  "variables de entorno por carpeta"        "echo 'export X=1' > .envrc"
+  fila entr    "ejecuta algo al cambiar un fichero"      "ls *.c | entr make"
+  fila just    "atajos de proyecto (Makefile sencillo)"  "just tarea"
+  sub "Seguridad y limpieza"
+  fila trash-put "borrar a la papelera, recuperable"     "trash-put fichero  ·  papelera"
+  sub "Adornos"
+  fila cava      "visualizador de audio"                 "cava"
+  fila tty-clock "reloj a pantalla completa"             "reloj"
+  fila cmatrix   "lluvia de Matrix"                      "cmatrix"
+  fila fastfetch "el saludo con la imagen"               "ff"
+}
 
-  Config:   ~/.config/kdeglobals  ~/.config/kwinrc  ~/.config/kitty
-  Tema:     ~/.local/share/plasma/desktoptheme/Rice
-  Paletas:  ~/.local/share/rice/palettes
-TXT
+sec_comandos() {
+  tit "COMANDOS DE ESTE RICE"
+  fila rice-doctor    "revisa qué está puesto y qué falta"   "rice-doctor"
+  fila rice-theme     "cambiar la paleta (KDE, GTK, kitty…)" "rice-theme menu"
+  fila rice-wallpaper "cambiar el fondo"                     "rice-wallpaper menu"
+  fila rice-fetch     "el saludo (imagen o ASCII, decide)"   "rice-fetch"
+  fila rice-notas     "bloc de notas en .txt"                "rice-notas [nombre]"
+  fila rice-panel     "rehacer / restaurar el panel"         "rice-panel reset"
+  fila rice-shortcuts "volver a poner los atajos"            "rice-shortcuts"
+  fila rice-help      "esto"                                 "rice-help apps"
+}
+
+sec_alias() {
+  tit "ALIAS (atajos de shell)"
+  printf '   %sLos que trae el rice. Con \\comando saltas el alias.%s\n\n' "$D" "$N"
+  for a in bat fd du ps discos lg e vim http md web br ping-g reloj ff y; do
+    d=$(alias "$a" 2>/dev/null | sed "s/^$a=//;s/^'//;s/'$//")
+    [ -n "$d" ] && printf '   %s%-10s%s → %s\n' "$AM" "$a" "$N" "$d"
+  done
+  printf '\n   %spapelera / papelera-restaurar / papelera-vaciar%s\n' "$AM" "$N"
+  printf '   %sayuda <comando>  → el --help con colores%s\n' "$AM" "$N"
+}
+
+sec_rutas() {
+  tit "DÓNDE ESTÁ CADA COSA"
+  printf '   %-34s %s\n' "~/.zshrc"                    "el shell (lo tuyo: ~/.zshrc.local)"
+  printf '   %-34s %s\n' "~/.p10k.zsh"                 "el prompt (p10k configure para rehacerlo)"
+  printf '   %-34s %s\n' "~/.config/zsh/"              "alias, completado y sugerencias"
+  printf '   %-34s %s\n' "~/.config/kitty/"            "terminal (theme.conf lo genera rice-theme)"
+  printf '   %-34s %s\n' "~/.config/rofi/"             "el buscador de Meta+Space"
+  printf '   %-34s %s\n' "~/.tmux.conf"                "tmux (prefijo Ctrl+a)"
+  printf '   %-34s %s\n' "~/.config/helix/"            "Helix"
+  printf '   %-34s %s\n' "~/Imágenes/terminal-imgs/"   "las imágenes del saludo"
+  printf '   %-34s %s\n' "~/Documentos/notas/"         "tus notas .txt"
+  printf '   %-34s %s\n' "~/.local/bin/"               "los comandos rice-*"
+  printf '   %-34s %s\n' "~/.config-backup-*/"         "respaldo de antes de instalar"
+}
+
+sec_terminal() {
+  tit "SIN ESCRITORIO (SSH, nube, TTY)"
+  printf '   %sLa misma configuración sin entorno gráfico:%s\n\n' "$D" "$N"
+  printf '   %sgit clone <tu-repo> ~/rice && cd ~/rice && ./install.sh --terminal%s\n\n' "$B" "$N"
+  printf '   Instala shell, prompt, alias, completado y las apps de terminal.\n'
+  printf '   NO toca escritorio, ni GRUB, ni paquetes gráficos.\n\n'
+  sub "Qué sigue funcionando ahí"
+  printf '   · zsh + Powerlevel10k, con el mismo prompt\n'
+  printf '   · el autocompletado con Tab y las sugerencias en gris\n'
+  printf '   · todas las apps de terminal de arriba\n'
+  printf '   · el saludo, en ASCII en vez de imagen (lo detecta solo)\n'
+  printf '   · tmux: cierras la conexión y la sesión sigue viva\n\n'
+  sub "Lo primero al entrar a una máquina nueva"
+  printf '   %stmux%s          para que nada se pierda si se corta la conexión\n' "$B" "$N"
+  printf '   %stmux a%s        volver a lo que dejaste\n' "$B" "$N"
+  printf '   %sCtrl+a d%s      salir dejándolo corriendo\n' "$B" "$N"
+}
+
+case "${1:-todo}" in
+  atajos|teclas)      sec_atajos ;;
+  apps|aplicaciones)  sec_apps ;;
+  comandos|cmd)       sec_comandos ;;
+  alias)              sec_alias ;;
+  rutas|config)       sec_rutas ;;
+  terminal|ssh|nube)  sec_terminal ;;
+  -h|--help)          sed -n '2,13p' "$0" ;;
+  *)  printf '\n %s%sTu escritorio%s  ·  rice-help [atajos|apps|comandos|alias|rutas|terminal]\n' "$B" "$AZ" "$N"
+      sec_atajos; sec_apps; sec_comandos; sec_alias; sec_rutas; sec_terminal
+      printf '\n   %s¿Algo no está? →  rice-doctor%s\n\n' "$D" "$N" ;;
+esac

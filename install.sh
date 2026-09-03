@@ -50,7 +50,7 @@ for a in "$@"; do case "$a" in
   --help|-h)         sed -n '2,26p' "$0"; exit 0 ;;
   *) die "opción desconocida: $a" ;;
 esac; done
-export DRY ASSUME_YES DO_APPS DO_JUEGOS
+export DRY ASSUME_YES DO_APPS DO_JUEGOS SOLO_TERMINAL
 
 backup_path() {
   local p="$1"
